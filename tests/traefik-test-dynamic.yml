@@ -1,0 +1,85 @@
+http:
+  routers:
+    api-router:
+      rule: PathPrefix(`/api`)
+      service: api@internal
+      entryPoints:
+        - websecure
+
+    test-app-router:
+      rule: Host(`test.local`)
+      service: test-app-service
+      middlewares:
+        - test-rate-limit
+        - test-headers
+        - test-compress
+      entryPoints:
+        - web
+
+  services:
+    test-app-service:
+      loadBalancer:
+        servers:
+          - url: 'http://127.0.0.1:8080'
+
+    weighted-test-service:
+      weighted:
+        services:
+          - name: test-app-service
+            weight: 80
+          - name: test-secondary-service
+            weight: 20
+
+    test-secondary-service:
+      loadBalancer:
+        servers:
+          - url: 'http://127.0.0.1:8081'
+
+  middlewares:
+    test-rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+
+    test-headers:
+      headers:
+        customRequestHeaders:
+          X-Test-Header: 'test-value'
+          X-App-Name: 'Traefik-UI'
+        customResponseHeaders:
+          X-Server-Name: 'traefik'
+
+    test-compress:
+      compress:
+        excludedContentTypes:
+          - 'application/json'
+
+tcp:
+  routers:
+    test-tcp-router:
+      rule: HostSNI(`tcp.test.local`)
+      service: test-tcp-service
+      middlewares:
+        - test-ip-allow
+      entryPoints:
+        - tcp
+
+  services:
+    test-tcp-service:
+      loadBalancer:
+        servers:
+          - address: '127.0.0.1:9000'
+
+  middlewares:
+    test-ip-allow:
+      ipAllowList:
+        sourceRange:
+          - '127.0.0.1/32'
+          - '192.168.1.0/24'
+
+udp:
+  services:
+    test-udp-service:
+      loadBalancer:
+        servers:
+          - address: '127.0.0.1:9001'

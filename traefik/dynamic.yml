@@ -1,0 +1,39 @@
+# Traefik Dynamic Configuration
+# This file is watched by Traefik for route/service/middleware definitions.
+# Use Traefik-UI to view these configurations or edit directly.
+
+http:
+  # Example router and service (commented out)
+  # routers:
+  #   my-app:
+  #     rule: "Host(`app.example.com`)"
+  #     service: my-app-service
+  #     entryPoints:
+  #       - web
+  #
+  # services:
+  #   my-app-service:
+  #     loadBalancer:
+  #       servers:
+  #         - url: "http://internal-app:8080"
+
+  # Middleware examples
+  # middlewares:
+  #   security-headers:
+  #     headers:
+  #       frameDeny: true
+  #       sslRedirect: true
+  #       browserXssFilter: true
+  #       contentTypeNosniff: true
+  #       forceSTSHeader: true
+  #       stsIncludeSubdomains: true
+  #       stsPreload: true
+  #       stsSeconds: 31536000
+  #
+  #   rate-limit:
+  #     rateLimit:
+  #       average: 100
+  #       burst: 50
+
+tcp: {}
+udp: {}

@@ -1,0 +1,95 @@
+services:
+  # ---- Traefik Reverse Proxy ----
+  traefik:
+    image: docker.io/library/traefik:v3.2
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      # Enable API and dashboard (insecure mode for demo; secure in production!)
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      # Entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Docker provider (uncomment if using Docker/Podman socket)
+      # - "--providers.docker=true"
+      # - "--providers.docker.exposedbydefault=false"
+      # File provider for dynamic config
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--providers.file.watch=true"
+      # Access logs
+      - "--accesslog=true"
+      - "--accesslog.filepath=/var/log/traefik/access.log"
+      # Log level
+      - "--log.level=INFO"
+      # Let's Encrypt (uncomment to enable)
+      # - "--certificatesresolvers.letsencrypt.acme.email=admin@example.com"
+      # - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
+      # - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"   # Traefik dashboard/API
+    volumes:
+      # Dynamic configuration
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      # ACME certificates
+      - ./traefik/acme.json:/etc/traefik/acme.json
+      # Access logs
+      - ./traefik/logs:/var/log/traefik
+      # Docker socket (for Docker provider — use podman socket for Podman)
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - traefik-net
+    # Enable for Podman rootless
+    # security_opt:
+    #   - label=disable
+
+  # ---- Traefik-UI Management Interface ----
+  traefik-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: traefik-ui:latest
+    container_name: traefik-ui
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Traefik API connection
+      - TRAEFIK_API_URL=http://traefik:8080
+      # Database path
+      - DB_PATH=/app/data/traefik-ui.db
+      # JWT secret (change in production!)
+      - JWT_SECRET=change-me-to-a-random-secret-in-production
+      # Optional: Traefik API auth
+      # - TRAEFIK_API_USERNAME=admin
+      # - TRAEFIK_API_PASSWORD=securepassword
+      # Optional: File paths for logs and certs
+      - ACCESS_LOG_PATH=/var/log/traefik/access.log
+      - ACME_JSON_PATH=/etc/traefik/acme.json
+      - DYNAMIC_CONFIG_PATH=/etc/traefik/dynamic.yml
+      # Log level
+      - LOG_LEVEL=info
+      # CORS
+      - CORS_ORIGIN=*
+      # Host/Port
+      - HOST=0.0.0.0
+      - PORT=3000
+    volumes:
+      # UI data (database, backups)
+      - ./data:/app/data
+      # Traefik logs (read-only access)
+      - ./traefik/logs:/var/log/traefik:ro
+      # ACME certificates (read-only access)
+      - ./traefik/acme.json:/etc/traefik/acme.json:ro
+      # Traefik dynamic config (read-only access)
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    networks:
+      - traefik-net
+    depends_on:
+      - traefik
+
+networks:
+  traefik-net:
+    driver: bridge
