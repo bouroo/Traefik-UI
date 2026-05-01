@@ -2,9 +2,11 @@ import { Database } from 'bun:sqlite';
 
 function generateRandomPassword(length: number = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+  const randomBytes = new Uint8Array(length);
+  crypto.getRandomValues(randomBytes);
   let password = '';
   for (let i = 0; i < length; i++) {
-    password += chars[Math.floor(Math.random() * chars.length)];
+    password += chars[randomBytes[i] % chars.length];
   }
   return password;
 }

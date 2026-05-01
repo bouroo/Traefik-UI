@@ -264,3 +264,6 @@ function renderProviderStats(overview) {
     ? `<div class="grid grid-cols-1 gap-6 mt-6">${sections.join('')}</div>`
     : '';
 }
+
+// Register dashboard page
+registerPage('dashboard', renderDashboard);

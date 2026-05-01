@@ -96,35 +96,6 @@ async function updateConnectionStatus() {
   }
 }
 
-// Toast notifications
-function showToast(message, type = 'success') {
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-// Loading state for page content
-function showLoading() {
-  const content = document.getElementById('page-content');
-  if (content) {
-    content.innerHTML = `
-      <div class="flex items-center justify-center py-20">
-        <div class="text-center">
-          <div class="spinner mx-auto mb-4"></div>
-          <p class="text-gray-500 dark:text-gray-400">Loading...</p>
-        </div>
-      </div>
-    `;
-  }
-}
-
 // Logout handler
 function initLogout() {
   const btn = document.getElementById('logout-btn');
@@ -147,31 +118,6 @@ function updateUserInfo() {
   }
 }
 
-// Format utility functions (used globally)
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-function formatUptime(seconds) {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const parts = [];
-  if (d > 0) parts.push(`${d}d`);
-  if (h > 0) parts.push(`${h}h`);
-  if (m > 0) parts.push(`${m}m`);
-  return parts.join(' ') || '< 1m';
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleString();
-}
-
 // Expose global functions for use in page modules
 window.showToast = showToast;
 window.showLoading = showLoading;
@@ -183,13 +129,6 @@ window.formatDate = formatDate;
 window.API = API;
 window.Auth = Auth;
 
-// Handle routing
-function handleRoute() {
-  const hash = window.location.hash.replace('#/', '') || 'dashboard';
-  setActiveNav(hash);
-  setPageTitle(hash);
-}
-
 // Initialize everything on DOM ready
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
@@ -197,9 +136,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initLogout();
   initLoginForm();
   updateUserInfo();
-
-  // Handle hash changes
-  window.addEventListener('hashchange', handleRoute);
 
   // Check auth state
   const hash = window.location.hash;

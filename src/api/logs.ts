@@ -96,6 +96,8 @@ function isJSONLine(line: string): boolean {
 }
 
 // Read last N lines from a file efficiently
+// TODO: This reads the entire file into memory — future improvement: use a seek-based approach
+// that only reads the necessary portion from the end, especially for multi-GB log files.
 async function readLastLines(
   filePath: string,
   totalLines: number,

@@ -129,120 +129,41 @@ async function fetchTraefik<T>(path: string): Promise<T | null> {
   }
 }
 
-// HTTP Routers
-async function getHttpRouters(): Promise<TraefikRouter[]> {
-  const data = await fetchTraefik<TraefikRouter[] | Record<string, any>>('/http/routers');
-  if (data === null) return [];
-  if (Array.isArray(data)) return data;
-  // Handle object format: { "router-name": { ... } }
-  return Object.entries(data).map(([name, value]) => ({
-    name,
-    ...value,
-  }));
-}
-
-async function getHttpRouter(name: string): Promise<TraefikRouter | null> {
-  return fetchTraefik<TraefikRouter>(`/http/routers/${encodeURIComponent(name)}`);
-}
-
-// HTTP Services
-async function getHttpServices(): Promise<TraefikService[]> {
-  const data = await fetchTraefik<TraefikService[] | Record<string, any>>('/http/services');
+/**
+ * Parse raw Traefik API response into array format.
+ * Handles both array format and object format { "name": { ... } }.
+ */
+function parseResources<T extends { name: string }>(data: T[] | Record<string, any> | null): T[] {
   if (data === null) return [];
   if (Array.isArray(data)) return data;
   return Object.entries(data).map(([name, value]) => ({
     name,
-    ...value,
+    ...(typeof value === 'object' && value !== null ? value : {}),
   }));
 }
 
-async function getHttpService(name: string): Promise<TraefikService | null> {
-  return fetchTraefik<TraefikService>(`/http/services/${encodeURIComponent(name)}`);
+/**
+ * Fetch all resources of a given type for a protocol.
+ * Replaces getHttpRouters, getTcpRouters, getUdpRouters, etc.
+ */
+async function getAllResources<T extends { name: string }>(
+  protocol: string,
+  resourceType: string
+): Promise<T[]> {
+  const data = await fetchTraefik<T[] | Record<string, any>>(`/${protocol}/${resourceType}`);
+  return parseResources<T>(data);
 }
 
-// HTTP Middlewares
-async function getHttpMiddlewares(): Promise<TraefikMiddleware[]> {
-  const data = await fetchTraefik<TraefikMiddleware[] | Record<string, any>>('/http/middlewares');
-  if (data === null) return [];
-  if (Array.isArray(data)) return data;
-  return Object.entries(data).map(([name, value]) => ({
-    name,
-    ...value,
-  }));
-}
-
-async function getHttpMiddleware(name: string): Promise<TraefikMiddleware | null> {
-  return fetchTraefik<TraefikMiddleware>(`/http/middlewares/${encodeURIComponent(name)}`);
-}
-
-// TCP Routers
-async function getTcpRouters(): Promise<TraefikRouter[]> {
-  const data = await fetchTraefik<TraefikRouter[] | Record<string, any>>('/tcp/routers');
-  if (data === null) return [];
-  if (Array.isArray(data)) return data;
-  return Object.entries(data).map(([name, value]) => ({
-    name,
-    ...value,
-  }));
-}
-
-// TCP Services
-async function getTcpServices(): Promise<TraefikService[]> {
-  const data = await fetchTraefik<TraefikService[] | Record<string, any>>('/tcp/services');
-  if (data === null) return [];
-  if (Array.isArray(data)) return data;
-  return Object.entries(data).map(([name, value]) => ({
-    name,
-    ...value,
-  }));
-}
-
-// TCP Middlewares
-async function getTcpMiddlewares(): Promise<TraefikMiddleware[]> {
-  const data = await fetchTraefik<TraefikMiddleware[] | Record<string, any>>('/tcp/middlewares');
-  if (data === null) return [];
-  if (Array.isArray(data)) return data;
-  return Object.entries(data).map(([name, value]) => ({
-    name,
-    ...value,
-  }));
-}
-
-async function getTcpMiddleware(name: string): Promise<TraefikMiddleware | null> {
-  return fetchTraefik<TraefikMiddleware>(`/tcp/middlewares/${encodeURIComponent(name)}`);
-}
-
-// UDP Middlewares
-async function getUdpMiddlewares(): Promise<TraefikMiddleware[]> {
-  const data = await fetchTraefik<TraefikMiddleware[] | Record<string, any>>('/udp/middlewares');
-  if (data === null) return [];
-  if (Array.isArray(data)) return data;
-  return Object.entries(data).map(([name, value]) => ({
-    name,
-    ...value,
-  }));
-}
-
-// UDP Routers
-async function getUdpRouters(): Promise<TraefikRouter[]> {
-  const data = await fetchTraefik<TraefikRouter[] | Record<string, any>>('/udp/routers');
-  if (data === null) return [];
-  if (Array.isArray(data)) return data;
-  return Object.entries(data).map(([name, value]) => ({
-    name,
-    ...value,
-  }));
-}
-
-// UDP Services
-async function getUdpServices(): Promise<TraefikService[]> {
-  const data = await fetchTraefik<TraefikService[] | Record<string, any>>('/udp/services');
-  if (data === null) return [];
-  if (Array.isArray(data)) return data;
-  return Object.entries(data).map(([name, value]) => ({
-    name,
-    ...value,
-  }));
+/**
+ * Fetch a single resource by name for a protocol and resource type.
+ * Replaces getHttpRouter, getTcpService, etc.
+ */
+async function getOneResource<T>(
+  protocol: string,
+  resourceType: string,
+  name: string
+): Promise<T | null> {
+  return fetchTraefik<T>(`/${protocol}/${resourceType}/${encodeURIComponent(name)}`);
 }
 
 // Entry Points
@@ -276,9 +197,66 @@ async function checkTraefikConnection(): Promise<boolean> {
   return version !== null;
 }
 
+// Backward-compatible named exports for HTTP resources
+async function getHttpRouters(): Promise<TraefikRouter[]> {
+  return getAllResources<TraefikRouter>('http', 'routers');
+}
+
+async function getHttpRouter(name: string): Promise<TraefikRouter | null> {
+  return getOneResource<TraefikRouter>('http', 'routers', name);
+}
+
+async function getHttpServices(): Promise<TraefikService[]> {
+  return getAllResources<TraefikService>('http', 'services');
+}
+
+async function getHttpService(name: string): Promise<TraefikService | null> {
+  return getOneResource<TraefikService>('http', 'services', name);
+}
+
+async function getHttpMiddlewares(): Promise<TraefikMiddleware[]> {
+  return getAllResources<TraefikMiddleware>('http', 'middlewares');
+}
+
+async function getHttpMiddleware(name: string): Promise<TraefikMiddleware | null> {
+  return getOneResource<TraefikMiddleware>('http', 'middlewares', name);
+}
+
+// Backward-compatible named exports for TCP resources
+async function getTcpRouters(): Promise<TraefikRouter[]> {
+  return getAllResources<TraefikRouter>('tcp', 'routers');
+}
+
+async function getTcpServices(): Promise<TraefikService[]> {
+  return getAllResources<TraefikService>('tcp', 'services');
+}
+
+async function getTcpMiddlewares(): Promise<TraefikMiddleware[]> {
+  return getAllResources<TraefikMiddleware>('tcp', 'middlewares');
+}
+
+async function getTcpMiddleware(name: string): Promise<TraefikMiddleware | null> {
+  return getOneResource<TraefikMiddleware>('tcp', 'middlewares', name);
+}
+
+// Backward-compatible named exports for UDP resources
+async function getUdpRouters(): Promise<TraefikRouter[]> {
+  return getAllResources<TraefikRouter>('udp', 'routers');
+}
+
+async function getUdpServices(): Promise<TraefikService[]> {
+  return getAllResources<TraefikService>('udp', 'services');
+}
+
+async function getUdpMiddlewares(): Promise<TraefikMiddleware[]> {
+  return getAllResources<TraefikMiddleware>('udp', 'middlewares');
+}
+
 // Export all functions and interfaces
 export {
   fetchTraefik,
+  getAllResources,
+  getOneResource,
   getHttpRouters,
   getHttpRouter,
   getHttpServices,
