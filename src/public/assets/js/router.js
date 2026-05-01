@@ -31,7 +31,7 @@ async function handleRoute() {
     try {
       await handler();
     } catch (err) {
-      console.error(`Error rendering ${route}:`, err);
+      console.error('Error rendering %s:', route, err);
       document.getElementById('page-content').innerHTML = `
         <div class="text-center py-20">
           <i class="ri-error-warning-line text-4xl text-red-500 mb-4 block"></i>
