@@ -29,7 +29,7 @@ function renderError(page, message) {
   return `
     <div class="text-center py-20">
       <i class="ri-error-warning-line text-4xl text-red-500 mb-4 block"></i>
-      <p class="text-red-500 dark:text-red-400">Failed to load ${page}</p>
+      <p class="text-red-500 dark:text-red-400">Failed to load ${escapeHtml(page)}</p>
       <p class="text-gray-400 text-sm mt-1">${escapeHtml(message)}</p>
       <button onclick="handleRoute()" class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm">Retry</button>
     </div>
