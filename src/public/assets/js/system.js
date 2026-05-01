@@ -183,3 +183,7 @@ async function renderSettings() {
     }
   });
 }
+
+// Register system and settings pages
+registerPage('system', renderSystem);
+registerPage('settings', renderSettings);

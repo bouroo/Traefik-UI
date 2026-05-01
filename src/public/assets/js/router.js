@@ -1,17 +1,12 @@
 // Simple hash-based router
 // Routes: #/dashboard, #/routers, #/services, #/middlewares, #/tls, #/entrypoints, #/logs, #/system, #/settings
 
-const routes = {
-  dashboard: renderDashboard,
-  routers: renderRouters,
-  services: renderServices,
-  middlewares: renderMiddlewares,
-  tls: renderTls,
-  entrypoints: renderEntrypoints,
-  logs: renderLogs,
-  system: renderSystem,
-  settings: renderSettings,
-};
+// Page registry for data-driven routing
+const pageRegistry = {};
+
+function registerPage(name, handler) {
+  pageRegistry[name] = handler;
+}
 
 function getRoute() {
   const hash = window.location.hash.slice(1); // remove #
@@ -26,7 +21,7 @@ async function handleRoute() {
   }
 
   const route = getRoute();
-  const handler = routes[route];
+  const handler = pageRegistry[route];
 
   setPageTitle(route);
   setActiveNav(route);

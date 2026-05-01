@@ -8,9 +8,7 @@ import { config } from './config';
 import { auth } from './auth/routes';
 import { dashboard } from './api/dashboard';
 import { overview } from './api/overview';
-import { routers } from './api/routers';
-import { services } from './api/services';
-import { middlewares } from './api/middlewares';
+import { resources } from './api/resources';
 import { tls } from './api/tls';
 import { logs } from './api/logs';
 import { entrypoints } from './api/entrypoints';
@@ -40,17 +38,16 @@ if (config.logLevel !== 'silent') {
 app.route('/api/auth', auth);
 app.route('/api/dashboard', dashboard);
 app.route('/api/overview', overview);
-app.route('/api/routers', routers);
-app.route('/api/services', services);
-app.route('/api/middlewares', middlewares);
 app.route('/api/tls', tls);
 app.route('/api/logs', logs);
 app.route('/api/entrypoints', entrypoints);
 app.route('/api/system', system);
-app.route('/api/configfile', configfile);
 
-// Health check (no auth)
+// Health check (no auth) - must be before resources mount to avoid being shadowed
 app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+app.route('/api', resources);
+app.route('/api/configfile', configfile);
 
 // Serve static frontend files from src/public
 // The frontend is a SPA — for any non-API, non-static path, serve index.html

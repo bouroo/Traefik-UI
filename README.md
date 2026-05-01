@@ -30,6 +30,20 @@ A full-featured web UI for managing your Traefik reverse proxy. Monitor routers,
 | Frontend    | Vanilla JS + Tailwind CSS + Remix Icons |
 | Container   | Podman/Docker                       |
 
+## Architecture
+
+Traefik-UI uses a **registry-driven architecture** to eliminate code duplication and simplify adding new Traefik features.
+
+The core design is a single source of truth — the **protocol/resource registry** (`src/traefik/registry.ts`) — which defines all protocols (HTTP, TCP, UDP), resource types (routers, services, middlewares), and their relationships. The generic Traefik client and API routes auto-generate from this registry.
+
+```
+Registry (data) → Generic client (fetch) → Generic routes (/api) → Page modules (UI)
+```
+
+**Adding a new protocol** (e.g., gRPC) requires only adding one entry to the registry — no other code changes needed.
+
+**On the frontend**, all page modules self-register via `registerPage()` in a data-driven router. Shared utilities (`utils.js`) and reusable UI components (`components.js`) are defined once and used everywhere.
+
 ## Quick Start
 
 ```bash
@@ -96,6 +110,8 @@ podman compose logs traefik-ui | grep "Password:"
 | GET    | `/api/routers/udp`          | List UDP routers           | Yes           |
 | GET    | `/api/routers/udp/:name`    | Get UDP router detail      | Yes           |
 
+> These routes are auto-generated from the protocol/resource registry. Adding a new protocol automatically creates the corresponding routes.
+
 ### Services (`/api/services`)
 | Method | Endpoint              | Description                | Auth Required |
 |--------|-----------------------|----------------------------|---------------|
@@ -107,6 +123,8 @@ podman compose logs traefik-ui | grep "Password:"
 | GET    | `/api/services/udp`         | List UDP services          | Yes           |
 | GET    | `/api/services/udp/:name`   | Get UDP service detail     | Yes           |
 
+> These routes are auto-generated from the protocol/resource registry. Adding a new protocol automatically creates the corresponding routes.
+
 ### Middlewares (`/api/middlewares`)
 | Method | Endpoint              | Description                | Auth Required |
 |--------|-----------------------|----------------------------|---------------|
@@ -115,6 +133,8 @@ podman compose logs traefik-ui | grep "Password:"
 | GET    | `/api/middlewares/http/:name` | Get HTTP middleware detail | Yes           |
 | GET    | `/api/middlewares/tcp`       | List TCP middlewares       | Yes           |
 | GET    | `/api/middlewares/tcp/:name`  | Get TCP middleware detail  | Yes           |
+
+> These routes are auto-generated from the protocol/resource registry. Adding a new protocol automatically creates the corresponding routes.
 
 ### TLS (`/api/tls`)
 | Method | Endpoint              | Description                | Auth Required |
@@ -204,9 +224,7 @@ Traefik-UI/
 │   │   └── middleware.ts             # JWT verification middleware
 │   ├── api/
 │   │   ├── dashboard.ts              # Dashboard stats endpoint
-│   │   ├── routers.ts                # HTTP/TCP/UDP router endpoints
-│   │   ├── services.ts               # HTTP/TCP/UDP service endpoints
-│   │   ├── middlewares.ts            # HTTP/TCP middleware endpoints
+│   │   ├── resources.ts              # Generic resource endpoints (routers, services, middlewares)
 │   │   ├── tls.ts                    # TLS certificate viewer
 │   │   ├── logs.ts                   # Access/error log viewer
 │   │   ├── entrypoints.ts            # Entrypoints viewer
@@ -214,7 +232,8 @@ Traefik-UI/
 │   │   ├── overview.ts               # Traefik overview data
 │   │   └── configfile.ts             # Static/dynamic config file viewer
 │   ├── traefik/
-│   │   └── client.ts                 # Traefik API client
+│   │   ├── client.ts                 # Generic Traefik API client with type definitions
+│   │   └── registry.ts               # Protocol/resource type registry
 │   ├── db/
 │   │   ├── index.ts                  # Database initialization
 │   │   └── schema.ts                 # SQLite schema definitions
@@ -233,7 +252,9 @@ Traefik-UI/
 │               ├── middlewares.js    # Middlewares UI
 │               ├── tls.js            # TLS certificates UI
 │               ├── system.js         # System stats UI
-│               └── router.js         # Router detail view
+│               ├── router.js         # SPA router
+│               ├── utils.js          # Shared utilities
+│               └── components.js     # Reusable UI components
 ├── tests/                            # Integration and unit tests
 │   ├── integration.test.ts
 │   ├── api-core.test.ts

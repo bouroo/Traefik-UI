@@ -49,7 +49,7 @@ services:
   traefik-ui:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
     image: traefik-ui:latest
     container_name: traefik-ui
     restart: unless-stopped

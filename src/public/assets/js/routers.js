@@ -213,36 +213,5 @@ async function viewRouterDetail(protocol, name) {
   }
 }
 
-// ============================================================
-// Shared Utility Functions (used across modules)
-// ============================================================
-
-function renderStatusBadge(status) {
-  if (!status) return '<span class="badge badge-warning">Unknown</span>';
-  const s = String(status).toLowerCase();
-  if (s === 'enabled' || s === 'ok' || s === 'up' || s === 'success' || s.startsWith('2'))
-    return '<span class="badge badge-success">' + escapeHtml(status) + '</span>';
-  if (s === 'disabled' || s === 'warning' || s.startsWith('4'))
-    return '<span class="badge badge-warning">' + escapeHtml(status) + '</span>';
-  if (s === 'error' || s.startsWith('5'))
-    return '<span class="badge badge-danger">' + escapeHtml(status) + '</span>';
-  return '<span class="badge badge-info">' + escapeHtml(status) + '</span>';
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function renderError(page, message) {
-  return `
-    <div class="text-center py-20">
-      <i class="ri-error-warning-line text-4xl text-red-500 mb-4 block"></i>
-      <p class="text-red-500 dark:text-red-400">Failed to load ${page}</p>
-      <p class="text-gray-400 text-sm mt-1">${message}</p>
-      <button onclick="handleRoute()" class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm">Retry</button>
-    </div>
-  `;
-}
+// Register router page
+registerPage('routers', renderRouters);
