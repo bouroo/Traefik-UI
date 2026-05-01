@@ -9,6 +9,12 @@ export function getMockTraefikUrl(): string {
 }
 
 export function startMockTraefik(): void {
+  // If another worker already started the mock server, reuse it
+  if (process.env.__MOCK_TRAEFIK_PORT__) {
+    port = parseInt(process.env.__MOCK_TRAEFIK_PORT__, 10);
+    return;
+  }
+
   server = Bun.serve({
     port: 0, // random available port
     hostname: '127.0.0.1',
@@ -255,12 +261,12 @@ export function startMockTraefik(): void {
   });
 
   port = server.port;
+  process.env.__MOCK_TRAEFIK_PORT__ = String(port);
+  process.env.TRAEFIK_API_URL = `http://127.0.0.1:${port}`;
   console.log(`[Test] Mock Traefik running on http://127.0.0.1:${port}`);
 }
 
 export function stopMockTraefik(): void {
-  if (server) {
-    server.stop();
-    server = null;
-  }
+  // No-op: the mock server persists for the entire test run to be shareable
+  // across parallel workers. The OS will clean up the port when the process exits.
 }

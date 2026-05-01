@@ -16,5 +16,4 @@ import { closeDb } from '../src/db';
 
 export function cleanupTestEnv(): void {
   closeDb();
-  stopMockTraefik();
 }
