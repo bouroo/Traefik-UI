@@ -51,6 +51,15 @@ dashboard.get('/', async (c) => {
 
   void _startTime;
 
+  const normalizedVersion = version
+    ? {
+        version: version.version || (version as any).Version || 'unknown',
+        codename: version.codename || (version as any).Codename || '',
+        startDate: version.startDate || '',
+        uptime: _uptime,
+      }
+    : { version: 'unknown', codename: '', startDate: '', uptime: 'unknown' };
+
   return c.json({
     overview: overview ?? {
       http: {},
@@ -59,7 +68,7 @@ dashboard.get('/', async (c) => {
       features: { tracing: 'disabled', metrics: 'disabled', accessLog: false },
       providers: [],
     },
-    version: version ?? { version: 'unknown', codename: '', startDate: '', uptime: 'unknown' },
+    version: normalizedVersion,
     entrypoints: entrypoints ?? [],
     connectionStatus,
   });

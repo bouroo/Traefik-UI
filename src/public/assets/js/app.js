@@ -135,22 +135,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderSidebar();
   initLogout();
   initLoginForm();
-  updateUserInfo();
 
-  // Check auth state
-  const hash = window.location.hash;
-  if (!hash || hash === '#/login') {
+  // Check auth state first, then route
+  const verified = await Auth.verify();
+  if (!verified) {
+    Auth.logout();
     showLogin();
+    if (window.location.hash && window.location.hash !== '#/login') {
+      window.location.hash = '#/login';
+    }
   } else {
-    await initAuth();
+    showApp();
+    updateUserInfo();
+    if (!window.location.hash || window.location.hash === '#/login') {
+      window.location.hash = '#/dashboard';
+    }
+    handleRoute();
   }
 
   // Start connection status polling
   updateConnectionStatus();
   setInterval(updateConnectionStatus, 30000);
-
-  // Handle initial hash
-  if (window.location.hash && window.location.hash !== '#/login') {
-    handleRoute();
-  }
 });

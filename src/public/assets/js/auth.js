@@ -5,7 +5,13 @@
 // Auth state
 const Auth = {
   token: localStorage.getItem('traefik_ui_token'),
-  user: JSON.parse(localStorage.getItem('traefik_ui_user') || 'null'),
+  user: (() => {
+    try {
+      return JSON.parse(localStorage.getItem('traefik_ui_user') || 'null');
+    } catch {
+      return null;
+    }
+  })(),
 
   // Check if user is authenticated
   isAuthenticated() {
@@ -141,7 +147,7 @@ function initLoginForm() {
 
 // Show/hide appropriate screens
 function showLogin() {
-  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('app-screen').classList.add('hidden');
 }
 

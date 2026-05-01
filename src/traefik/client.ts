@@ -168,8 +168,8 @@ async function getOneResource<T>(
 
 // Entry Points
 async function getEntryPoints(): Promise<TraefikEntryPoint[]> {
-  const result = await fetchTraefik<TraefikEntryPoint[]>('/entrypoints');
-  return result ?? [];
+  const data = await fetchTraefik<TraefikEntryPoint[] | Record<string, any>>('/entrypoints');
+  return parseResources<TraefikEntryPoint>(data);
 }
 
 async function getEntryPoint(name: string): Promise<TraefikEntryPoint | null> {
@@ -182,8 +182,19 @@ async function getOverview(): Promise<TraefikOverview | null> {
 }
 
 // Version
+function normalizeVersion(data: any): TraefikVersion {
+  return {
+    version: data.version || data.Version || 'unknown',
+    codename: data.codename || data.Codename || '',
+    startDate: data.startDate || data.StartDate || '',
+    uptime: data.uptime || data.Uptime || '',
+  };
+}
+
 async function getVersion(): Promise<TraefikVersion | null> {
-  return fetchTraefik<TraefikVersion>('/version');
+  const data = await fetchTraefik<any>('/version');
+  if (!data) return null;
+  return normalizeVersion(data);
 }
 
 // Raw Data
