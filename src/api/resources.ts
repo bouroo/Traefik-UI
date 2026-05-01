@@ -4,6 +4,7 @@ import { authMiddleware } from '../auth/middleware';
 import {
   getResourceConfig,
   getProtocolsForResource,
+  RESOURCE_TYPES,
   type AssociatedResource,
   type ProtocolConfig,
   type ResourceTypeConfig,
@@ -19,7 +20,7 @@ const resources = new Hono();
 resources.use('*', authMiddleware);
 
 // Supported resource types for routing
-const RESOURCE_TYPE_PATTERN = 'routers|services|middlewares';
+const RESOURCE_TYPE_PATTERN = Object.keys(RESOURCE_TYPES).join('|');
 
 // GET /:resourceType/:protocol — list for one protocol: { [resourceType]: [...] }
 // NOTE: This route MUST be defined before /:resourceType to avoid being shadowed
@@ -38,8 +39,8 @@ resources.get(`/:resourceType{${RESOURCE_TYPE_PATTERN}}/:protocol`, async (c) =>
     }
 
     const items = await traefik.getAllResources(protocol, resourceType);
-    // Middlewares list returns the array directly (not wrapped in { middlewares: [...] })
-    if (resourceType === 'middlewares') {
+    // Some resource types return the array directly (not wrapped in { [resourceType]: [...] })
+    if (resourceConfig.wrapResponse === false) {
       return c.json(items);
     }
 
@@ -74,7 +75,13 @@ resources.get(`/:resourceType{${RESOURCE_TYPE_PATTERN}}/:protocol/:name`, async 
 
     // Fetch associated resources using the config
     const associatedResources: AssociatedResource[] = resourceConfig.associatedResources || [];
-    const fetchPromises: Promise<unknown>[] = [];
+
+    type FetchTask = {
+      promise: Promise<unknown>;
+      assoc: AssociatedResource;
+    };
+
+    const fetchTasks: FetchTask[] = [];
 
     for (const assoc of associatedResources) {
       const value = (item as Record<string, unknown>)[assoc.field];
@@ -83,58 +90,45 @@ resources.get(`/:resourceType{${RESOURCE_TYPE_PATTERN}}/:protocol/:name`, async 
       if (assoc.isArray && Array.isArray(value)) {
         for (const nameValue of value) {
           if (typeof nameValue === 'string') {
-            fetchPromises.push(traefik.getOneResource(protocol, assoc.resourceType, nameValue));
+            fetchTasks.push({
+              promise: traefik.getOneResource(protocol, assoc.resourceType, nameValue),
+              assoc,
+            });
           }
         }
       } else if (typeof value === 'string') {
-        fetchPromises.push(traefik.getOneResource(protocol, assoc.resourceType, value));
+        fetchTasks.push({
+          promise: traefik.getOneResource(protocol, assoc.resourceType, value),
+          assoc,
+        });
       }
     }
 
-    const fetchResults = await Promise.allSettled(fetchPromises);
+    const fetchResults = await Promise.allSettled(fetchTasks.map((t) => t.promise));
 
-    // Build associated resources response keyed by field name (not resource type)
-    // e.g., router links to 'service' (singular) not 'services', 'middlewares' (plural) not 'middleware'
+    // Build associated resources response keyed by field name
     const associated: Record<string, unknown> = {};
-    let resultIndex: number = 0;
-
     for (const assoc of associatedResources) {
-      // Get the raw value from the item
-      const value = (item as Record<string, unknown>)[assoc.field];
-
-      // For array associations, always initialize the array (even if item has no middlewares)
       if (assoc.isArray) {
-        const fetched: unknown[] = [];
-
-        if (Array.isArray(value)) {
-          for (const nameValue of value) {
-            if (typeof nameValue === 'string' && resultIndex < fetchResults.length) {
-              const result = fetchResults[resultIndex++];
-              if (result.status === 'fulfilled' && result.value !== null) {
-                fetched.push(result.value);
-              }
-            }
-          }
-        }
-
-        associated[assoc.field] = fetched;
-        continue;
+        associated[assoc.field] = [];
       }
+    }
 
-      // Single-value association
-      if (value === undefined || value === null) continue;
-
-      if (typeof value === 'string' && resultIndex < fetchResults.length) {
-        const result = fetchResults[resultIndex++];
-        if (result.status === 'fulfilled' && result.value !== null && result.value !== undefined) {
-          associated[assoc.field] = result.value;
+    for (let i = 0; i < fetchResults.length; i++) {
+      const result = fetchResults[i];
+      const task = fetchTasks[i];
+      if (result.status === 'fulfilled' && result.value !== null && result.value !== undefined) {
+        if (task.assoc.isArray) {
+          (associated[task.assoc.field] as unknown[]).push(result.value);
+        } else {
+          associated[task.assoc.field] = result.value;
         }
       }
     }
 
-    // Middlewares detail returns the middleware object directly (no wrapping),
+    // Some resource types return the detail directly (no wrapping),
     // unlike routers/services which return { router/service, ...associated }
-    if (resourceType === 'middlewares') {
+    if (resourceConfig.wrapResponse === false) {
       return c.json(item);
     }
 

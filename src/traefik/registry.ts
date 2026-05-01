@@ -19,6 +19,8 @@ export interface ResourceTypeConfig {
   displayName: string;
   /** Resources linked from this entity's detail view (e.g., routers link to services and middlewares) */
   associatedResources?: AssociatedResource[];
+  /** Whether to wrap the response in { [resourceType]: [...] } - defaults to true */
+  wrapResponse?: boolean;
   /** Icon for the sidebar (remixicon class) */
   icon: string;
   /** Whether this resource type should appear in the nav */
@@ -58,6 +60,7 @@ export const RESOURCE_TYPES: Record<string, ResourceTypeConfig> = {
     displayName: 'Middlewares',
     icon: 'ri-stack-line',
     navVisible: true,
+    wrapResponse: false,
   },
 };
 
