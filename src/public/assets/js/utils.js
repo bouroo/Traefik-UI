@@ -5,7 +5,7 @@
 
 // XSS prevention - escape HTML special characters
 function escapeHtml(str) {
-  if (!str) return '';
+  if (str === undefined || str === null) return '';
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
