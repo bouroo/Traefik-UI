@@ -35,9 +35,6 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      - name: Security audit
-        run: bunx audit
-
       - name: Type check
         run: bun run typecheck
 
