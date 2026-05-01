@@ -71,7 +71,7 @@ function renderDataTable(columns, rows, options = {}) {
             <tr ${options.onRowClick ? `class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" onclick="${options.onRowClick}(${JSON.stringify(row).replace(/"/g, '&quot;')})"` : ''}>
               ${columns
                 .map((col) => {
-                  const value = col.render ? col.render(row[col.key], row) : row[col.key] || '-';
+                  const value = col.render ? col.render(row[col.key], row) : escapeHtml(row[col.key] ?? '-');
                   return `<td>${value}</td>`;
                 })
                 .join('')}
