@@ -138,7 +138,7 @@ function parseResources<T extends { name: string }>(data: T[] | Record<string, a
   if (Array.isArray(data)) return data;
   return Object.entries(data).map(([name, value]) => ({
     name,
-    ...value,
+    ...(typeof value === 'object' && value !== null ? value : {}),
   }));
 }
 
