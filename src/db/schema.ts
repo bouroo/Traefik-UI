@@ -76,7 +76,8 @@ export async function initDb(db: Database): Promise<void> {
     console.log('========================================\n');
 
     try {
-      const credsDir = path.dirname(config.db.path);
+      const rawDir = path.dirname(config.db.path);
+      const credsDir = rawDir === '.' ? './data' : rawDir;
       const credsPath = path.join(credsDir, 'admin-credentials.txt');
       await Bun.write(credsPath, `Username: admin\nPassword: ${tempPassword}\n`);
       console.log(`  Credentials saved to: ${credsPath}`);

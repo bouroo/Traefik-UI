@@ -169,8 +169,8 @@ describe('Overview API', () => {
     const res = await authGet('/api/overview/version');
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toHaveProperty('Version');
-    expect(body).toHaveProperty('Codename');
+    expect(body).toHaveProperty('version');
+    expect(body).toHaveProperty('codename');
     expect(body).toHaveProperty('startDate');
   });
 });

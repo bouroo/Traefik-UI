@@ -31,11 +31,6 @@ async function writeDynamicConfig(data: Record<string, unknown>): Promise<void> 
 }
 
 // ── Type definitions ──
-interface ResourceParams {
-  protocol: string;   // 'http', 'tcp', 'udp'
-  resourceType: string; // 'routers', 'services', 'middlewares'
-  name: string;
-}
 
 // Ensure nested structure exists
 function ensurePath(obj: Record<string, unknown>, ...keys: string[]): Record<string, unknown> {
