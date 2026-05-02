@@ -60,7 +60,7 @@ function renderRouterTable(routers, protocol) {
           ${routers
             .map(
               (r) => `
-            <tr class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" onclick="viewRouterDetail('${protocol}', '${encodeURIComponent(r.name)}')">
+            <tr class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" onclick="viewRouterDetail('${protocol}', '${r.name}')">
               <td>
                 <span class="font-medium">${escapeHtml(r.name)}</span>
                 ${r.tls ? '<span class="badge badge-info text-xs ml-2">TLS</span>' : ''}

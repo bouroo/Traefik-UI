@@ -88,6 +88,9 @@ services:
       - traefik-net
     security_opt:
       - label=disable
+    # Run as root so SQLite can write to the host-mounted volume.
+    # In production, use a named volume or set correct host directory permissions.
+    user: "0:0"
     depends_on:
       - traefik-proxy
 

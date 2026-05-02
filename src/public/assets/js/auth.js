@@ -100,9 +100,11 @@ const API = {
   getHttpServices: () => Auth.get('/api/services/http'),
   getTcpServices: () => Auth.get('/api/services/tcp'),
   getUdpServices: () => Auth.get('/api/services/udp'),
+  getService: (protocol, name) => Auth.get(`/api/services/${protocol}/${encodeURIComponent(name)}`),
   getMiddlewares: () => Auth.get('/api/middlewares'),
   getHttpMiddlewares: () => Auth.get('/api/middlewares/http'),
   getTcpMiddlewares: () => Auth.get('/api/middlewares/tcp'),
+  getMiddleware: (protocol, name) => Auth.get(`/api/middlewares/${protocol}/${encodeURIComponent(name)}`),
   getCertificates: () => Auth.get('/api/tls/certificates'),
   getAccessLogs: (params = {}) => {
     const qs = new URLSearchParams(params).toString();

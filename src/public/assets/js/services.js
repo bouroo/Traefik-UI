@@ -55,7 +55,7 @@ function renderServiceTable(services, protocol) {
           ${services
             .map(
               (s) => `
-            <tr>
+            <tr class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" onclick="viewServiceDetail('${protocol}', '${s.name}')">
               <td class="font-medium">${escapeHtml(s.name)}</td>
               <td>${escapeHtml(s.type || '-')}</td>
               <td>${(s.loadBalancer?.servers || []).map((srv) => `<span class="font-mono text-xs">${escapeHtml(srv.url)}</span>`).join('<br>') || '-'}</td>
@@ -72,6 +72,49 @@ function renderServiceTable(services, protocol) {
       </div>
     </div>
   `;
+}
+
+async function viewServiceDetail(protocol, name) {
+  const content = document.getElementById('page-content');
+
+  try {
+    const data = await API.getService(protocol, name);
+    const service = data.service || data;
+
+    content.innerHTML = `
+      <button onclick="renderServices()" class="mb-4 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400">
+        ← Back to Services
+      </button>
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">${escapeHtml(service.name)}</h2>
+          ${renderStatusBadge(service.status)}
+        </div>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-400">Type</span>
+            <span>${escapeHtml(service.type || '-')}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Provider</span>
+            <span>${escapeHtml(service.provider || '-')}</span>
+          </div>
+        </div>
+        ${service.loadBalancer?.servers ? `
+          <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <h3 class="text-sm font-medium mb-2">Servers</h3>
+            <ul class="space-y-1">
+              ${service.loadBalancer.servers.map((srv) => `
+                <li class="font-mono text-xs bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded">${escapeHtml(srv.url)}</li>
+              `).join('')}
+            </ul>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  } catch (err) {
+    content.innerHTML = renderError('service detail', err.message);
+  }
 }
 
 function switchServiceTab(protocol) {
