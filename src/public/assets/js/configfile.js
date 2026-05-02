@@ -19,7 +19,8 @@ async function validateConfig(yamlText, type) {
 // Render the config page
 async function renderConfigfile() {
   const content = document.getElementById('page-content');
-  content.innerHTML = '<div class="flex items-center justify-center py-20"><div class="text-center"><div class="spinner mx-auto mb-4"></div><p class="text-gray-500">Loading config...</p></div></div>';
+  content.innerHTML =
+    '<div class="flex items-center justify-center py-20"><div class="text-center"><div class="spinner mx-auto mb-4"></div><p class="text-gray-500">Loading config...</p></div></div>';
 
   try {
     const yamlContent = await loadRawConfig('dynamic');
@@ -31,7 +32,8 @@ async function renderConfigfile() {
 
 // Load raw YAML config
 async function loadRawConfig(type) {
-  const endpoint = type === 'dynamic' ? '/api/configfile/dynamic?raw=true' : '/api/configfile/static?raw=true';
+  const endpoint =
+    type === 'dynamic' ? '/api/configfile/dynamic?raw=true' : '/api/configfile/static?raw=true';
   const res = await Auth.fetch(endpoint);
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
@@ -44,7 +46,7 @@ async function loadRawConfig(type) {
 function renderConfigEditor(yamlContent, type) {
   const content = document.getElementById('page-content');
   currentConfigType = type;
-  
+
   content.innerHTML = `
     <div class="space-y-6 max-w-5xl">
       <!-- Info Card -->
@@ -56,9 +58,11 @@ function renderConfigEditor(yamlContent, type) {
           <div class="flex-1">
             <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Traefik Configuration</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              ${type === 'dynamic' 
-                ? 'Dynamic configuration (routers, services, middlewares). Changes are picked up automatically by file watcher.' 
-                : 'Static configuration (entryPoints, providers, certificates). May require Traefik restart to apply.'}
+              ${
+                type === 'dynamic'
+                  ? 'Dynamic configuration (routers, services, middlewares). Changes are picked up automatically by file watcher.'
+                  : 'Static configuration (entryPoints, providers, certificates). May require Traefik restart to apply.'
+              }
             </p>
           </div>
         </div>
@@ -103,9 +107,11 @@ function renderConfigEditor(yamlContent, type) {
         
         <p class="text-xs text-gray-400 mt-2">
           <i class="ri-information-line mr-1"></i> 
-          ${type === 'dynamic' 
-            ? 'Dynamic config is watched by Traefik and reloaded automatically.' 
-            : 'Static config changes require a Traefik restart to take effect.'}
+          ${
+            type === 'dynamic'
+              ? 'Dynamic config is watched by Traefik and reloaded automatically.'
+              : 'Static config changes require a Traefik restart to take effect.'
+          }
         </p>
       </div>
     </div>
@@ -115,7 +121,7 @@ function renderConfigEditor(yamlContent, type) {
   setTimeout(() => {
     const textarea = document.getElementById('config-textarea');
     if (!textarea) return;
-    
+
     configEditor = CodeMirror.fromTextArea(textarea, {
       mode: 'yaml',
       theme: document.documentElement.classList.contains('dark') ? 'monokai' : 'default',
@@ -128,7 +134,7 @@ function renderConfigEditor(yamlContent, type) {
       autoCloseBrackets: true,
       gutters: ['CodeMirror-linenumbers'],
     });
-    
+
     configEditor.setSize('100%', '500px');
   }, 50);
 }
@@ -136,7 +142,7 @@ function renderConfigEditor(yamlContent, type) {
 // Switch between dynamic and static config tabs
 async function switchConfigTab(type) {
   if (type === currentConfigType && configEditor) return;
-  
+
   // Update tab styles immediately
   document.querySelectorAll('.config-tab').forEach((btn) => {
     const isActive = btn.id === `tab-${type}`;
@@ -148,21 +154,22 @@ async function switchConfigTab(type) {
   try {
     const yamlContent = await loadRawConfig(type);
     currentConfigType = type;
-    
+
     // Update info text
     const infoText = document.querySelector('.stat-card p.text-sm');
     if (infoText) {
-      infoText.textContent = type === 'dynamic' 
-        ? 'Dynamic configuration (routers, services, middlewares). Changes are picked up automatically by file watcher.' 
-        : 'Static configuration (entryPoints, providers, certificates). May require Traefik restart to apply.';
+      infoText.textContent =
+        type === 'dynamic'
+          ? 'Dynamic configuration (routers, services, middlewares). Changes are picked up automatically by file watcher.'
+          : 'Static configuration (entryPoints, providers, certificates). May require Traefik restart to apply.';
     }
-    
+
     // Update footer hint
     const footerHint = document.querySelector('p.mt-2 .text-xs, p.text-xs.text-gray-400.mt-2');
     if (footerHint) {
       footerHint.innerHTML = `<i class="ri-information-line mr-1"></i> ${type === 'dynamic' ? 'Dynamic config is watched by Traefik and reloaded automatically.' : 'Static config changes require a Traefik restart to take effect.'}`;
     }
-    
+
     if (configEditor) {
       configEditor.setValue(yamlContent);
       configEditor.clearHistory();
@@ -172,44 +179,52 @@ async function switchConfigTab(type) {
     currentConfigType = type;
     // Show a helpful message in the editor area
     if (configEditor) {
-      const message = err.message.includes('not configured') || err.message.includes('404')
-        ? '# Static config is not configured.\n# Set STATIC_CONFIG_PATH environment variable to enable static config editing.\n# Traefik static configuration includes entryPoints, providers, certificates, etc.'
-        : `# Error loading config: ${err.message}`;
+      const message =
+        err.message.includes('not configured') || err.message.includes('404')
+          ? '# Static config is not configured.\n# Set STATIC_CONFIG_PATH environment variable to enable static config editing.\n# Traefik static configuration includes entryPoints, providers, certificates, etc.'
+          : `# Error loading config: ${err.message}`;
       configEditor.setValue(message);
       configEditor.setOption('readOnly', true);
       configEditor.clearHistory();
     }
-    showToast(type === 'static' ? 'Static config not configured. Set STATIC_CONFIG_PATH to enable.' : 'Error: ' + err.message, 'warning');
+    showToast(
+      type === 'static'
+        ? 'Static config not configured. Set STATIC_CONFIG_PATH to enable.'
+        : 'Error: ' + err.message,
+      'warning'
+    );
   }
 }
 
 // Validate current YAML content via backend
 async function validateCurrentConfig() {
   if (!configEditor) return;
-  
+
   const validateBtn = document.getElementById('validate-btn');
   const messageEl = document.getElementById('config-message');
   const yamlContent = configEditor.getValue();
-  
+
   validateBtn.disabled = true;
   validateBtn.innerHTML = '<div class="spinner-sm mr-1"></div> Validating...';
   messageEl.classList.add('hidden');
-  
+
   try {
     const result = await validateConfig(yamlContent, currentConfigType);
-    
+
     if (result.valid) {
-      messageEl.innerHTML = '<div class="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-2"><i class="ri-check-line text-green-600 dark:text-green-400"></i><span class="text-sm text-green-700 dark:text-green-300">Configuration is valid!</span></div>';
+      messageEl.innerHTML =
+        '<div class="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-2"><i class="ri-check-line text-green-600 dark:text-green-400"></i><span class="text-sm text-green-700 dark:text-green-300">Configuration is valid!</span></div>';
     } else {
       const errors = result.errors || [];
       if (errors.length === 0) {
-        messageEl.innerHTML = '<div class="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-2"><i class="ri-check-line text-green-600 dark:text-green-400"></i><span class="text-sm text-green-700 dark:text-green-300">Configuration is valid!</span></div>';
+        messageEl.innerHTML =
+          '<div class="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-2"><i class="ri-check-line text-green-600 dark:text-green-400"></i><span class="text-sm text-green-700 dark:text-green-300">Configuration is valid!</span></div>';
       } else {
         // Check if just YAML is valid but schema is unavailable
-        if (result.yamlValid && errors.some(e => e.includes('schema') || e.includes('Schema'))) {
+        if (result.yamlValid && errors.some((e) => e.includes('schema') || e.includes('Schema'))) {
           messageEl.innerHTML = `<div class="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg"><div class="flex items-center gap-2 mb-1"><i class="ri-information-line text-gray-500"></i><span class="text-sm font-medium text-gray-600 dark:text-gray-300">YAML syntax OK — schema unavailable</span></div><p class="text-sm text-gray-500">${escapeHtml(errors[0])}</p></div>`;
         } else {
-          messageEl.innerHTML = `<div class="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg"><div class="flex items-center gap-2 mb-2"><i class="ri-error-warning-line text-red-600 dark:text-red-400"></i><span class="text-sm font-medium text-red-700 dark:text-red-300">${errors.length} validation issue${errors.length !== 1 ? 's' : ''} found</span></div><ul class="list-disc list-inside text-sm text-red-600 dark:text-red-400 space-y-1 max-h-48 overflow-y-auto">${errors.map(e => `<li class="font-mono text-xs">${escapeHtml(e)}</li>`).join('')}</ul></div>`;
+          messageEl.innerHTML = `<div class="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg"><div class="flex items-center gap-2 mb-2"><i class="ri-error-warning-line text-red-600 dark:text-red-400"></i><span class="text-sm font-medium text-red-700 dark:text-red-300">${errors.length} validation issue${errors.length !== 1 ? 's' : ''} found</span></div><ul class="list-disc list-inside text-sm text-red-600 dark:text-red-400 space-y-1 max-h-48 overflow-y-auto">${errors.map((e) => `<li class="font-mono text-xs">${escapeHtml(e)}</li>`).join('')}</ul></div>`;
         }
       }
     }
@@ -226,28 +241,29 @@ async function validateCurrentConfig() {
 // Format the current YAML config
 async function formatCurrentConfig() {
   if (!configEditor) return;
-  
+
   const formatBtn = document.getElementById('format-btn');
   const messageEl = document.getElementById('config-message');
   const yamlContent = configEditor.getValue();
-  
+
   formatBtn.disabled = true;
   formatBtn.innerHTML = '<div class="spinner-sm mr-1"></div> Formatting...';
   messageEl.classList.add('hidden');
-  
+
   try {
     const result = await API.formatConfig(yamlContent);
-    
+
     if (!result.success) throw new Error(result.error || 'Format failed');
-    
+
     // Replace editor content with formatted YAML
     configEditor.setValue(result.formatted);
     configEditor.clearHistory();
-    
-    messageEl.innerHTML = '<div class="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-2"><i class="ri-check-line text-green-600 dark:text-green-400"></i><span class="text-sm text-green-700 dark:text-green-300">YAML formatted successfully.</span></div>';
+
+    messageEl.innerHTML =
+      '<div class="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-2"><i class="ri-check-line text-green-600 dark:text-green-400"></i><span class="text-sm text-green-700 dark:text-green-300">YAML formatted successfully.</span></div>';
     messageEl.classList.remove('hidden');
     showToast('YAML formatted', 'success');
-    
+
     setTimeout(() => messageEl.classList.add('hidden'), 3000);
   } catch (err) {
     messageEl.innerHTML = `<div class="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg flex items-center gap-2"><i class="ri-error-warning-line text-red-600 dark:text-red-400"></i><span class="text-sm text-red-700 dark:text-red-300">${escapeHtml(err.message)}</span></div>`;
@@ -261,28 +277,28 @@ async function formatCurrentConfig() {
 // Save the current config
 async function saveCurrentConfig() {
   if (!configEditor) return;
-  
+
   const saveBtn = document.getElementById('save-config-btn');
   const messageEl = document.getElementById('config-message');
   const yamlContent = configEditor.getValue();
   const type = currentConfigType;
-  
+
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<div class="spinner-sm mr-1"></div> Saving...';
   messageEl.classList.add('hidden');
-  
+
   try {
     const saveFn = type === 'dynamic' ? API.saveDynamicConfig : API.saveStaticConfig;
     const result = await saveFn(yamlContent);
-    
+
     if (!result.success) throw new Error(result.error || 'Save failed');
-    
+
     configEditor.clearHistory();
-    
+
     messageEl.innerHTML = `<div class="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-2"><i class="ri-check-line text-green-600 dark:text-green-400"></i><span class="text-sm text-green-700 dark:text-green-300">${escapeHtml(result.message || 'Config saved successfully.')}</span></div>`;
     messageEl.classList.remove('hidden');
     showToast('Config saved successfully', 'success');
-    
+
     setTimeout(() => messageEl.classList.add('hidden'), 5000);
   } catch (err) {
     messageEl.innerHTML = `<div class="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg flex items-center gap-2"><i class="ri-error-warning-line text-red-600 dark:text-red-400"></i><span class="text-sm text-red-700 dark:text-red-300">${escapeHtml(err.message)}</span></div>`;

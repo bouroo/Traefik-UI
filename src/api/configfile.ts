@@ -1,10 +1,16 @@
 import { Hono } from 'hono';
 import { YAML } from 'bun';
-import Ajv from 'ajv';
+import Ajv, { type ValidateFunction } from 'ajv';
 import { config } from '../config';
 import { authMiddleware } from '../auth/middleware';
 
 const configfile = new Hono();
+
+// Module-level Ajv instance and caches
+const ajv = new Ajv({ allErrors: true, strict: false });
+const SCHEMA_TTL_MS = 60 * 60 * 1000; // 1 hour
+const schemaCache = new Map<string, { schema: Record<string, unknown>; fetchedAt: number }>();
+const validateCache = new Map<string, ValidateFunction>();
 
 configfile.use('*', authMiddleware);
 
@@ -27,12 +33,12 @@ configfile.get('/static', async (c) => {
 
   try {
     const content = await Bun.file(filePath).text();
-    
+
     // If raw mode requested, return YAML text directly
     if (c.req.query('raw') === 'true') {
       return c.text(content);
     }
-    
+
     const parsed = YAML.parse(content);
     return c.json(parsed);
   } catch (error) {
@@ -73,10 +79,13 @@ configfile.put('/static', async (c) => {
   try {
     YAML.parse(body);
   } catch (error) {
-    return c.json({
-      error: 'Invalid YAML syntax',
-      details: error instanceof Error ? error.message : String(error),
-    }, 400);
+    return c.json(
+      {
+        error: 'Invalid YAML syntax',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      400
+    );
   }
 
   // Write to file
@@ -92,7 +101,8 @@ configfile.put('/static', async (c) => {
 
   return c.json({
     success: true,
-    message: 'Static config updated. Note: Traefik may require a restart for static config changes.',
+    message:
+      'Static config updated. Note: Traefik may require a restart for static config changes.',
   });
 });
 
@@ -115,12 +125,12 @@ configfile.get('/dynamic', async (c) => {
 
   try {
     const content = await Bun.file(filePath).text();
-    
+
     // If raw mode requested, return YAML text directly
     if (c.req.query('raw') === 'true') {
       return c.text(content);
     }
-    
+
     const parsed = YAML.parse(content);
     return c.json(parsed);
   } catch (error) {
@@ -161,10 +171,13 @@ configfile.put('/dynamic', async (c) => {
   try {
     YAML.parse(body);
   } catch (error) {
-    return c.json({
-      error: 'Invalid YAML syntax',
-      details: error instanceof Error ? error.message : String(error),
-    }, 400);
+    return c.json(
+      {
+        error: 'Invalid YAML syntax',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      400
+    );
   }
 
   // Write to file
@@ -216,59 +229,73 @@ configfile.post('/validate', async (c) => {
     });
   }
 
-  // Step 2: Fetch the JSON Schema
-  const schemaUrl = type === 'dynamic'
-    ? 'https://www.schemastore.org/traefik-v3-file-provider.json'
-    : 'https://www.schemastore.org/traefik-v3.json';
+  // Step 2: Get schema with caching
+  const schemaUrl =
+    type === 'dynamic'
+      ? 'https://www.schemastore.org/traefik-v3-file-provider.json'
+      : 'https://www.schemastore.org/traefik-v3.json';
 
   let schema: Record<string, unknown>;
-  try {
-    const res = await fetch(schemaUrl);
-    if (!res.ok) {
+  const now = Date.now();
+  const cached = schemaCache.get(schemaUrl);
+
+  if (cached && now - cached.fetchedAt < SCHEMA_TTL_MS) {
+    schema = cached.schema;
+  } else {
+    try {
+      const res = await fetch(schemaUrl);
+      if (!res.ok) {
+        return c.json({
+          valid: false,
+          errors: [`Could not fetch schema (HTTP ${res.status}). Skipping schema validation.`],
+          yamlValid: true,
+        });
+      }
+      schema = (await res.json()) as Record<string, unknown>;
+      schemaCache.set(schemaUrl, { schema, fetchedAt: now });
+    } catch (err) {
       return c.json({
         valid: false,
-        errors: [`Could not fetch schema (HTTP ${res.status}). Skipping schema validation.`],
+        errors: [`Schema fetch failed: ${err instanceof Error ? err.message : String(err)}`],
         yamlValid: true,
       });
     }
-    schema = await res.json() as Record<string, unknown>;
-  } catch (err) {
-    return c.json({
-      valid: false,
-      errors: [`Schema fetch failed: ${err instanceof Error ? err.message : String(err)}`],
-      yamlValid: true,
-    });
   }
 
-  // Step 3: Validate against JSON Schema using AJV
-  try {
-    const ajv = new Ajv({ allErrors: true, strict: false });
-    const validate = ajv.compile(schema);
-    const valid = validate(parsed);
-
-    if (valid) {
+  // Step 3: Get compiled validator with caching
+  let validate = validateCache.get(schemaUrl);
+  if (!validate) {
+    try {
+      validate = ajv.compile(schema);
+      validateCache.set(schemaUrl, validate);
+    } catch (err) {
       return c.json({
-        valid: true,
-        errors: [],
+        valid: false,
+        errors: [`Schema compilation error: ${err instanceof Error ? err.message : String(err)}`],
       });
     }
+  }
 
-    // Format AJV errors into readable messages
-    const errors = (validate.errors || []).map((e) => {
-      const path = e.instancePath || '(root)';
-      return `${path}: ${e.message}`;
-    });
+  // Step 4: Validate against JSON Schema using AJV
+  const valid = validate(parsed);
 
+  if (valid) {
     return c.json({
-      valid: false,
-      errors,
-    });
-  } catch (err) {
-    return c.json({
-      valid: false,
-      errors: [`Schema compilation error: ${err instanceof Error ? err.message : String(err)}`],
+      valid: true,
+      errors: [],
     });
   }
+
+  // Format AJV errors into readable messages
+  const errors = (validate.errors || []).map((e) => {
+    const path = e.instancePath || '(root)';
+    return `${path}: ${e.message}`;
+  });
+
+  return c.json({
+    valid: false,
+    errors,
+  });
 });
 
 // POST /api/configfile/format
@@ -293,10 +320,13 @@ configfile.post('/format', async (c) => {
   try {
     parsed = YAML.parse(yaml);
   } catch (err) {
-    return c.json({
-      error: 'YAML syntax error',
-      details: err instanceof Error ? err.message : String(err),
-    }, 400);
+    return c.json(
+      {
+        error: 'YAML syntax error',
+        details: err instanceof Error ? err.message : String(err),
+      },
+      400
+    );
   }
 
   // Re-serialize with consistent formatting (block-style, 2-space indent)

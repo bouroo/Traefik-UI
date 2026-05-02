@@ -19,9 +19,9 @@ const MIDDLEWARE_TYPES = [
 function showMiddlewareModal(protocol, existingName, existingData) {
   existingName = existingName ? stripProviderSuffix(existingName) : existingName;
   const isEdit = !!existingName;
-  
+
   const middlewareType = existingData?.type || 'stripPrefix';
-  
+
   const modalHtml = `
     <div id="middleware-modal-overlay" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this) closeMiddlewareModal()">
       <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
@@ -43,9 +43,11 @@ function showMiddlewareModal(protocol, existingName, existingData) {
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
                 <select id="mw-type" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none">
-                  ${MIDDLEWARE_TYPES.map((t) => `
+                  ${MIDDLEWARE_TYPES.map(
+                    (t) => `
                     <option value="${t.value}" ${t.value === middlewareType ? 'selected' : ''}>${t.label}</option>
-                  `).join('')}
+                  `
+                  ).join('')}
                 </select>
               </div>
               
@@ -69,7 +71,7 @@ function showMiddlewareModal(protocol, existingName, existingData) {
       </div>
     </div>
   `;
-  
+
   const existing = document.getElementById('middleware-modal-overlay');
   if (existing) existing.remove();
   document.body.insertAdjacentHTML('beforeend', modalHtml);
@@ -83,17 +85,17 @@ async function saveMiddlewareForm(event, protocol, existingName) {
   event.preventDefault();
   const errorEl = document.getElementById('middleware-modal-error');
   errorEl.classList.add('hidden');
-  
+
   const name = document.getElementById('mw-name').value.trim();
   if (!name) {
     errorEl.textContent = 'Middleware name is required';
     errorEl.classList.remove('hidden');
     return;
   }
-  
+
   const type = document.getElementById('mw-type').value;
   const configRaw = document.getElementById('mw-config').value.trim();
-  
+
   let configObj = {};
   if (configRaw && configRaw !== '{}') {
     try {
@@ -104,16 +106,16 @@ async function saveMiddlewareForm(event, protocol, existingName) {
       return;
     }
   }
-  
+
   // Build middleware data: { type: { ...config } }
   const middlewareData = {
     [type]: configObj && Object.keys(configObj).length > 0 ? configObj : {},
   };
-  
+
   try {
     const result = await API.saveConfigResource('middlewares', protocol, name, middlewareData);
     if (!result.success) throw new Error(result.error || 'Failed to save middleware');
-    
+
     closeMiddlewareModal();
     showToast(result.message || 'Middleware saved', 'success');
     setTimeout(() => renderMiddlewares(), 1500);
@@ -126,11 +128,11 @@ async function saveMiddlewareForm(event, protocol, existingName) {
 async function deleteMiddleware(protocol, name) {
   name = stripProviderSuffix(name);
   if (!confirm(`Delete middleware '${name}'? This cannot be undone.`)) return;
-  
+
   try {
     const result = await API.deleteConfigResource('middlewares', protocol, name);
     if (!result.success) throw new Error(result.error || 'Failed to delete middleware');
-    
+
     showToast(result.message || 'Middleware deleted', 'success');
     setTimeout(() => renderMiddlewares(), 1500);
   } catch (err) {
@@ -207,7 +209,9 @@ function renderMiddlewareTable(middlewares, protocol) {
               <span>${escapeHtml(m.provider || '-')}</span>
             </div>
           </div>
-          ${m.provider === 'file' ? `
+          ${
+            m.provider === 'file'
+              ? `
             <div class="flex justify-end gap-1 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
               <button onclick="event.stopPropagation(); showMiddlewareModal('${protocol}', '${escapeHtml(m.name)}', ${JSON.stringify(m).replace(/"/g, '&quot;')})" class="py-1 px-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded text-xs flex items-center gap-1" title="Edit">
                 <i class="ri-edit-line"></i> Edit
@@ -216,7 +220,9 @@ function renderMiddlewareTable(middlewares, protocol) {
                 <i class="ri-delete-bin-line"></i> Delete
               </button>
             </div>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
       `
         )
@@ -240,14 +246,18 @@ async function viewMiddlewareDetail(protocol, name) {
           ← Back to Middlewares
         </button>
         <div class="flex gap-2">
-          ${middleware.provider === 'file' ? `
+          ${
+            middleware.provider === 'file'
+              ? `
             <button onclick="showMiddlewareModal('${protocol}', '${escapeHtml(middleware.name)}', ${JSON.stringify(middleware).replace(/"/g, '&quot;')})" class="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1">
               <i class="ri-edit-line"></i> Edit
             </button>
             <button onclick="deleteMiddleware('${protocol}', '${escapeHtml(middleware.name)}')" class="py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1">
               <i class="ri-delete-bin-line"></i> Delete
             </button>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
       </div>
       <div class="stat-card">
@@ -265,19 +275,27 @@ async function viewMiddlewareDetail(protocol, name) {
             <span>${escapeHtml(middleware.provider || '-')}</span>
           </div>
         </div>
-        ${configEntries.length > 0 ? `
+        ${
+          configEntries.length > 0
+            ? `
           <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
             <h3 class="text-sm font-medium mb-2">Configuration</h3>
             <dl class="space-y-1">
-              ${configEntries.map(([key, value]) => `
+              ${configEntries
+                .map(
+                  ([key, value]) => `
                 <div class="flex justify-between">
                   <dt class="text-gray-400">${escapeHtml(key)}</dt>
                   <dd class="font-mono text-xs">${escapeHtml(JSON.stringify(value))}</dd>
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
             </dl>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
     `;
   } catch (err) {
@@ -294,7 +312,9 @@ function switchMiddlewareTab(protocol) {
   });
 
   // Update Add button
-  const addBtn = document.querySelector('#page-content .flex.items-center.justify-between .flex.gap-2 button');
+  const addBtn = document.querySelector(
+    '#page-content .flex.items-center.justify-between .flex.gap-2 button'
+  );
   if (addBtn) {
     addBtn.onclick = () => showMiddlewareModal(protocol);
     addBtn.innerHTML = `<i class="ri-add-line"></i> Add ${protocol.toUpperCase()}`;

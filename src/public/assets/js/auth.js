@@ -104,7 +104,8 @@ const API = {
   getMiddlewares: () => Auth.get('/api/middlewares'),
   getHttpMiddlewares: () => Auth.get('/api/middlewares/http'),
   getTcpMiddlewares: () => Auth.get('/api/middlewares/tcp'),
-  getMiddleware: (protocol, name) => Auth.get(`/api/middlewares/${protocol}/${encodeURIComponent(name)}`),
+  getMiddleware: (protocol, name) =>
+    Auth.get(`/api/middlewares/${protocol}/${encodeURIComponent(name)}`),
   getCertificates: () => Auth.get('/api/tls/certificates'),
   getAccessLogs: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
@@ -118,38 +119,43 @@ const API = {
   // Config file operations
   getDynamicConfigRaw: () => Auth.get('/api/configfile/dynamic?raw=true'),
   getDynamicConfig: () => Auth.get('/api/configfile/dynamic'),
-  saveDynamicConfig: (yamlText) => Auth.fetch('/api/configfile/dynamic', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'text/plain' },
-    body: yamlText,
-  }).then(r => r.json()),
+  saveDynamicConfig: (yamlText) =>
+    Auth.fetch('/api/configfile/dynamic', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'text/plain' },
+      body: yamlText,
+    }).then((r) => r.json()),
 
   // Static config operations
   getStaticConfigRaw: () => Auth.get('/api/configfile/static?raw=true'),
-  saveStaticConfig: (yamlText) => Auth.fetch('/api/configfile/static', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'text/plain' },
-    body: yamlText,
-  }).then(r => r.json()),
+  saveStaticConfig: (yamlText) =>
+    Auth.fetch('/api/configfile/static', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'text/plain' },
+      body: yamlText,
+    }).then((r) => r.json()),
 
   // Format YAML config via backend
-  formatConfig: (yamlText) => Auth.fetch('/api/configfile/format', {
-    method: 'POST',
-    body: JSON.stringify({ yaml: yamlText }),
-  }).then(r => r.json()),
-  
+  formatConfig: (yamlText) =>
+    Auth.fetch('/api/configfile/format', {
+      method: 'POST',
+      body: JSON.stringify({ yaml: yamlText }),
+    }).then((r) => r.json()),
+
   // Config CRUD operations
   getConfigResource: (resourceType, protocol) => {
     const qs = protocol ? `?protocol=${protocol}` : '';
     return Auth.get(`/api/config-crud/${resourceType}${qs}`);
   },
-  saveConfigResource: (resourceType, protocol, name, data) => Auth.fetch('/api/config-crud/' + resourceType, {
-    method: 'POST',
-    body: JSON.stringify({ protocol, name, data }),
-  }).then(r => r.json()),
-  deleteConfigResource: (resourceType, protocol, name) => Auth.fetch(`/api/config-crud/${resourceType}/${protocol}/${encodeURIComponent(name)}`, {
-    method: 'DELETE',
-  }).then(r => r.json()),
+  saveConfigResource: (resourceType, protocol, name, data) =>
+    Auth.fetch('/api/config-crud/' + resourceType, {
+      method: 'POST',
+      body: JSON.stringify({ protocol, name, data }),
+    }).then((r) => r.json()),
+  deleteConfigResource: (resourceType, protocol, name) =>
+    Auth.fetch(`/api/config-crud/${resourceType}/${protocol}/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    }).then((r) => r.json()),
 };
 
 // Login form handler

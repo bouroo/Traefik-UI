@@ -11,15 +11,18 @@ function getRouterDefaults(protocol) {
     tcp: 'HostSNI(`example.com`)',
     udp: 'HostSNI(`example.com`)',
   };
-  return { ruleDefault: ruleDefaults[protocol] || ruleDefaults.http, rulePlaceholder: rulePlaceholders[protocol] || rulePlaceholders.http };
+  return {
+    ruleDefault: ruleDefaults[protocol] || ruleDefaults.http,
+    rulePlaceholder: rulePlaceholders[protocol] || rulePlaceholders.http,
+  };
 }
 
 function showRouterModal(protocol, existingName, existingData) {
   existingName = existingName ? stripProviderSuffix(existingName) : existingName;
   const isEdit = !!existingName;
-  
+
   const { ruleDefault, rulePlaceholder } = getRouterDefaults(protocol);
-  
+
   const defaults = {
     rule: existingData?.rule || ruleDefault,
     service: existingData?.service || '',
@@ -27,7 +30,7 @@ function showRouterModal(protocol, existingName, existingData) {
     priority: existingData?.priority || 0,
     tls: existingData?.tls || false,
   };
-  
+
   const modalHtml = `
     <div id="router-modal-overlay" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this) closeRouterModal()">
       <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
@@ -89,7 +92,7 @@ function showRouterModal(protocol, existingName, existingData) {
       </div>
     </div>
   `;
-  
+
   const existing = document.getElementById('router-modal-overlay');
   if (existing) existing.remove();
   document.body.insertAdjacentHTML('beforeend', modalHtml);
@@ -103,23 +106,28 @@ async function saveRouterForm(event, protocol, existingName) {
   event.preventDefault();
   const errorEl = document.getElementById('router-modal-error');
   errorEl.classList.add('hidden');
-  
+
   const name = document.getElementById('rt-name').value.trim();
   if (!name) {
     errorEl.textContent = 'Router name is required';
     errorEl.classList.remove('hidden');
     return;
   }
-  
+
   const rule = document.getElementById('rt-rule').value.trim();
   const service = document.getElementById('rt-service').value.trim();
   const entryPointsRaw = document.getElementById('rt-entrypoints').value.trim();
-  const entryPoints = entryPointsRaw ? entryPointsRaw.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const entryPoints = entryPointsRaw
+    ? entryPointsRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
   const priority = parseInt(document.getElementById('rt-priority').value) || 0;
   const tls = document.getElementById('rt-tls').checked;
-  
+
   const { ruleDefault } = getRouterDefaults(protocol);
-  
+
   const routerData = {
     rule: rule || ruleDefault,
     service: service || undefined,
@@ -127,16 +135,16 @@ async function saveRouterForm(event, protocol, existingName) {
     priority,
     tls: tls || undefined,
   };
-  
+
   // Remove undefined keys
   Object.keys(routerData).forEach((k) => {
     if (routerData[k] === undefined) delete routerData[k];
   });
-  
+
   try {
     const result = await API.saveConfigResource('routers', protocol, name, routerData);
     if (!result.success) throw new Error(result.error || 'Failed to save router');
-    
+
     closeRouterModal();
     showToast(result.message || 'Router saved', 'success');
     setTimeout(() => renderRouters(), 1500);
@@ -149,11 +157,11 @@ async function saveRouterForm(event, protocol, existingName) {
 async function deleteRouter(protocol, name) {
   name = stripProviderSuffix(name);
   if (!confirm(`Delete router '${name}'? This cannot be undone.`)) return;
-  
+
   try {
     const result = await API.deleteConfigResource('routers', protocol, name);
     if (!result.success) throw new Error(result.error || 'Failed to delete router');
-    
+
     showToast(result.message || 'Router deleted', 'success');
     setTimeout(() => renderRouters(), 1500);
   } catch (err) {
@@ -243,14 +251,18 @@ function renderRouterTable(routers, protocol) {
               <td>${renderStatusBadge(r.status)}</td>
               <td>
                 <div class="flex gap-1">
-                  ${r.provider === 'file' ? `
+                  ${
+                    r.provider === 'file'
+                      ? `
                     <button onclick="event.stopPropagation(); showRouterModal('${protocol}', '${escapeHtml(r.name)}', ${JSON.stringify(r).replace(/"/g, '&quot;')})" class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded" title="Edit">
                       <i class="ri-edit-line text-sm"></i>
                     </button>
                     <button onclick="event.stopPropagation(); deleteRouter('${protocol}', '${escapeHtml(r.name)}')" class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded" title="Delete">
                       <i class="ri-delete-bin-line text-sm"></i>
                     </button>
-                  ` : '<span class="text-xs text-gray-400">managed</span>'}
+                  `
+                      : '<span class="text-xs text-gray-400">managed</span>'
+                  }
                 </div>
               </td>
             </tr>
@@ -278,7 +290,9 @@ function switchRouterTab(protocol) {
   });
 
   // Update Add button
-  const addBtn = document.querySelector('#page-content .flex.items-center.justify-between .flex.gap-2 button');
+  const addBtn = document.querySelector(
+    '#page-content .flex.items-center.justify-between .flex.gap-2 button'
+  );
   if (addBtn) {
     addBtn.onclick = () => showRouterModal(protocol);
     addBtn.innerHTML = `<i class="ri-add-line"></i> Add ${protocol.toUpperCase()}`;
@@ -305,14 +319,18 @@ async function viewRouterDetail(protocol, name) {
           <i class="ri-arrow-left-line"></i> Back to Routers
         </button>
         <div class="flex gap-2">
-          ${router.provider === 'file' ? `
+          ${
+            router.provider === 'file'
+              ? `
             <button onclick="showRouterModal('${protocol}', '${escapeHtml(router.name)}', ${JSON.stringify(router).replace(/"/g, '&quot;')})" class="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1">
               <i class="ri-edit-line"></i> Edit
             </button>
             <button onclick="deleteRouter('${protocol}', '${escapeHtml(router.name)}')" class="py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1">
               <i class="ri-delete-bin-line"></i> Delete
             </button>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
       </div>
       
@@ -349,17 +367,23 @@ async function viewRouterDetail(protocol, name) {
           </div>
         </div>
         
-        ${middlewares.length > 0 ? `
+        ${
+          middlewares.length > 0
+            ? `
           <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
             <p class="text-xs text-gray-400 mb-2">Middlewares</p>
             <div class="flex flex-wrap gap-1">
               ${middlewares.map((m) => `<span class="badge badge-info">${escapeHtml(m.name)}</span>`).join('')}
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
       
-      ${service ? `
+      ${
+        service
+          ? `
         <div class="stat-card">
           <h4 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Associated Service: ${escapeHtml(service.name)}</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -371,7 +395,9 @@ async function viewRouterDetail(protocol, name) {
               <p class="text-xs text-gray-400 mb-1">Status</p>
               ${renderStatusBadge(service.status)}
             </div>
-            ${service.loadBalancer?.servers ? `
+            ${
+              service.loadBalancer?.servers
+                ? `
               <div class="md:col-span-2">
                 <p class="text-xs text-gray-400 mb-2">Servers</p>
                 <div class="space-y-1">
@@ -387,10 +413,14 @@ async function viewRouterDetail(protocol, name) {
                     .join('')}
                 </div>
               </div>
-            ` : ''}
+            `
+                : ''
+            }
           </div>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
     `;
   } catch (err) {
     content.innerHTML = `

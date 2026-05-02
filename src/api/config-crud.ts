@@ -3,6 +3,17 @@ import { YAML } from 'bun';
 import { config } from '../config';
 import { authMiddleware } from '../auth/middleware';
 
+class Mutex {
+  private promise = Promise.resolve();
+  async runExclusive<T>(fn: () => Promise<T>): Promise<T> {
+    const release = new Promise<T>((resolve, reject) => {
+      this.promise = this.promise.then(() => fn().then(resolve, reject));
+    });
+    return release;
+  }
+}
+const writeMutex = new Mutex();
+
 const configCrud = new Hono();
 
 configCrud.use('*', authMiddleware);
@@ -17,7 +28,11 @@ async function readDynamicConfig(): Promise<Record<string, unknown>> {
     return {};
   }
   const content = await Bun.file(filePath).text();
-  return YAML.parse(content) as Record<string, unknown>;
+  const parsed = YAML.parse(content);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return {};
+  }
+  return parsed as Record<string, unknown>;
 }
 
 // ── Helper: serialize and write dynamic config YAML ──
@@ -27,7 +42,9 @@ async function writeDynamicConfig(data: Record<string, unknown>): Promise<void> 
     throw new Error('Dynamic config path not configured');
   }
   const yamlContent = YAML.stringify(data, null, 2);
-  await Bun.write(filePath, yamlContent);
+  return writeMutex.runExclusive(async () => {
+    await Bun.write(filePath, yamlContent);
+  });
 }
 
 // ── Type definitions ──
@@ -56,10 +73,13 @@ function stripProviderSuffix(name: string | undefined): string {
 // Creates or updates a resource entry in the dynamic config
 configCrud.post('/:resourceType', async (c) => {
   const resourceType = c.req.param('resourceType') as string;
-  
+
   // Validate resource type
   if (!['routers', 'services', 'middlewares'].includes(resourceType)) {
-    return c.json({ error: `Invalid resource type: ${resourceType}. Valid: routers, services, middlewares` }, 400);
+    return c.json(
+      { error: `Invalid resource type: ${resourceType}. Valid: routers, services, middlewares` },
+      400
+    );
   }
 
   let body: { protocol?: string; name?: string; data?: Record<string, unknown> };
@@ -75,7 +95,7 @@ configCrud.post('/:resourceType', async (c) => {
   if (!protocol || !name || !data) {
     return c.json({ error: 'Missing required fields: protocol, name, data' }, 400);
   }
-  
+
   if (!['http', 'tcp', 'udp'].includes(protocol)) {
     return c.json({ error: `Invalid protocol: ${protocol}` }, 400);
   }
@@ -87,16 +107,19 @@ configCrud.post('/:resourceType', async (c) => {
 
   try {
     const configData = await readDynamicConfig();
-    
+
     // Navigate to the section: protocol.resourceType
     ensurePath(configData, protocol, resourceType);
-    const section = (configData[protocol] as Record<string, unknown>)[resourceType] as Record<string, unknown>;
-    
+    const section = (configData[protocol] as Record<string, unknown>)[resourceType] as Record<
+      string,
+      unknown
+    >;
+
     // Set the resource entry
     section[name] = data;
-    
+
     await writeDynamicConfig(configData);
-    
+
     return c.json({
       success: true,
       message: `${resourceType.slice(0, -1)} '${name}' saved. Traefik will reload automatically.`,
@@ -112,7 +135,7 @@ configCrud.post('/:resourceType', async (c) => {
 configCrud.delete('/:resourceType/:protocol/:name', async (c) => {
   const resourceType = c.req.param('resourceType') as string;
   const protocol = c.req.param('protocol') as string;
-  const rawName = decodeURIComponent(c.req.param('name') as string);
+  const rawName = c.req.param('name') as string;
   const name = stripProviderSuffix(rawName);
 
   if (!['routers', 'services', 'middlewares'].includes(resourceType)) {
@@ -121,19 +144,22 @@ configCrud.delete('/:resourceType/:protocol/:name', async (c) => {
 
   try {
     const configData = await readDynamicConfig();
-    
+
     const protocolSection = configData[protocol] as Record<string, unknown> | undefined;
     if (!protocolSection) {
       return c.json({ error: `Protocol '${protocol}' not found in config` }, 404);
     }
-    
+
     const resourceSection = protocolSection[resourceType] as Record<string, unknown> | undefined;
     if (!resourceSection || !resourceSection[name]) {
-      return c.json({ error: `${resourceType.slice(0, -1)} '${name}' not found in ${protocol}` }, 404);
+      return c.json(
+        { error: `${resourceType.slice(0, -1)} '${name}' not found in ${protocol}` },
+        404
+      );
     }
-    
+
     delete resourceSection[name];
-    
+
     // Clean up empty sections
     if (Object.keys(resourceSection).length === 0) {
       delete protocolSection[resourceType];
@@ -141,9 +167,9 @@ configCrud.delete('/:resourceType/:protocol/:name', async (c) => {
     if (Object.keys(protocolSection).length === 0) {
       delete configData[protocol];
     }
-    
+
     await writeDynamicConfig(configData);
-    
+
     return c.json({
       success: true,
       message: `${resourceType.slice(0, -1)} '${name}' deleted. Traefik will reload automatically.`,
@@ -168,12 +194,12 @@ configCrud.get('/:resourceType', async (c) => {
 
   try {
     const configData = await readDynamicConfig();
-    
+
     if (protocol) {
       const section = (configData[protocol] as Record<string, unknown>)?.[resourceType];
       return c.json(section || {});
     }
-    
+
     // Return all protocols
     const result: Record<string, unknown> = {};
     for (const p of ['http', 'tcp', 'udp']) {

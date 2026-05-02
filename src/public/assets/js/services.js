@@ -14,17 +14,17 @@ function showServiceModal(protocol, existingName, existingData) {
   existingName = existingName ? stripProviderSuffix(existingName) : existingName;
   const isEdit = !!existingName;
   const content = document.getElementById('page-content');
-  
+
   window._currentServiceModalProtocol = protocol;
-  
+
   const serviceDefaults = getServiceDefaults(protocol);
-  
+
   // Build server list from existing data or empty
   let servers = [{ url: serviceDefaults.defaultUrl }];
   if (existingData?.loadBalancer?.servers?.length) {
     servers = existingData.loadBalancer.servers.map((s) => ({ url: s.url }));
   }
-  
+
   const modalHtml = `
     <div id="service-modal-overlay" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this) closeServiceModal()">
       <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
@@ -46,14 +46,18 @@ function showServiceModal(protocol, existingName, existingData) {
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Servers</label>
                 <div id="svc-servers" class="space-y-2">
-                  ${servers.map((s, i) => `
+                  ${servers
+                    .map(
+                      (s, i) => `
                     <div class="flex gap-2 items-center">
                       <input type="text" value="${escapeHtml(s.url)}" data-server-idx="${i}" class="svc-server-url flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none" placeholder="${serviceDefaults.placeholder}">
                       <button type="button" onclick="removeServerRow(this)" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg" title="Remove server">
                         <i class="ri-delete-bin-line"></i>
                       </button>
                     </div>
-                  `).join('')}
+                  `
+                    )
+                    .join('')}
                 </div>
                 <button type="button" onclick="addServerRow()" class="mt-2 text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1">
                   <i class="ri-add-line"></i> Add Server
@@ -74,7 +78,7 @@ function showServiceModal(protocol, existingName, existingData) {
       </div>
     </div>
   `;
-  
+
   // Append modal to body
   const existing = document.getElementById('service-modal-overlay');
   if (existing) existing.remove();
@@ -112,7 +116,7 @@ async function saveServiceForm(event, protocol, existingName) {
   event.preventDefault();
   const errorEl = document.getElementById('service-modal-error');
   errorEl.classList.add('hidden');
-  
+
   const nameEl = document.getElementById('svc-name');
   const name = nameEl.value.trim();
   if (!name) {
@@ -120,29 +124,29 @@ async function saveServiceForm(event, protocol, existingName) {
     errorEl.classList.remove('hidden');
     return;
   }
-  
+
   const serverUrls = [];
   document.querySelectorAll('.svc-server-url').forEach((input) => {
     const url = input.value.trim();
     if (url) serverUrls.push({ url });
   });
-  
+
   if (serverUrls.length === 0) {
     errorEl.textContent = 'At least one server URL is required';
     errorEl.classList.remove('hidden');
     return;
   }
-  
+
   const serviceData = {
     loadBalancer: {
       servers: serverUrls,
     },
   };
-  
+
   try {
     const result = await API.saveConfigResource('services', protocol, name, serviceData);
     if (!result.success) throw new Error(result.error || 'Failed to save service');
-    
+
     closeServiceModal();
     showToast(result.message || 'Service saved', 'success');
     // Reload the page to show updated data
@@ -157,11 +161,11 @@ async function saveServiceForm(event, protocol, existingName) {
 async function deleteService(protocol, name) {
   name = stripProviderSuffix(name);
   if (!confirm(`Delete service '${name}'? This cannot be undone.`)) return;
-  
+
   try {
     const result = await API.deleteConfigResource('services', protocol, name);
     if (!result.success) throw new Error(result.error || 'Failed to delete service');
-    
+
     showToast(result.message || 'Service deleted', 'success');
     setTimeout(() => renderServices(), 1500);
   } catch (err) {
@@ -246,14 +250,18 @@ function renderServiceTable(services, protocol) {
               <td>${renderStatusBadge(s.status)}</td>
               <td>
                 <div class="flex gap-1">
-                  ${s.provider === 'file' ? `
+                  ${
+                    s.provider === 'file'
+                      ? `
                     <button onclick="event.stopPropagation(); showServiceModal('${protocol}', '${escapeHtml(s.name)}', ${JSON.stringify(s).replace(/"/g, '&quot;')})" class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded" title="Edit">
                       <i class="ri-edit-line text-sm"></i>
                     </button>
                     <button onclick="event.stopPropagation(); deleteService('${protocol}', '${escapeHtml(s.name)}')" class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded" title="Delete">
                       <i class="ri-delete-bin-line text-sm"></i>
                     </button>
-                  ` : '<span class="text-xs text-gray-400">managed</span>'}
+                  `
+                      : '<span class="text-xs text-gray-400">managed</span>'
+                  }
                 </div>
               </td>
             </tr>
@@ -285,14 +293,18 @@ async function viewServiceDetail(protocol, name) {
           ← Back to Services
         </button>
         <div class="flex gap-2">
-          ${service.provider === 'file' ? `
+          ${
+            service.provider === 'file'
+              ? `
             <button onclick="showServiceModal('${protocol}', '${escapeHtml(service.name)}', ${JSON.stringify(service).replace(/"/g, '&quot;')})" class="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1">
               <i class="ri-edit-line"></i> Edit
             </button>
             <button onclick="deleteService('${protocol}', '${escapeHtml(service.name)}')" class="py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1">
               <i class="ri-delete-bin-line"></i> Delete
             </button>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
       </div>
       <div class="stat-card">
@@ -310,16 +322,24 @@ async function viewServiceDetail(protocol, name) {
             <span>${escapeHtml(service.provider || '-')}</span>
           </div>
         </div>
-        ${service.loadBalancer?.servers ? `
+        ${
+          service.loadBalancer?.servers
+            ? `
           <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
             <h3 class="text-sm font-medium mb-2">Servers</h3>
             <ul class="space-y-1">
-              ${service.loadBalancer.servers.map((srv) => `
+              ${service.loadBalancer.servers
+                .map(
+                  (srv) => `
                 <li class="font-mono text-xs bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded">${escapeHtml(srv.url)}</li>
-              `).join('')}
+              `
+                )
+                .join('')}
             </ul>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
     `;
   } catch (err) {
@@ -336,7 +356,9 @@ function switchServiceTab(protocol) {
   });
 
   // Update Add button for current protocol
-  const addBtn = document.querySelector('#page-content .flex.items-center.justify-between .flex.gap-2 button');
+  const addBtn = document.querySelector(
+    '#page-content .flex.items-center.justify-between .flex.gap-2 button'
+  );
   if (addBtn) {
     addBtn.setAttribute('onclick', `showServiceModal('${protocol}')`);
     addBtn.innerHTML = `<i class="ri-add-line"></i> Add ${protocol.toUpperCase()}`;

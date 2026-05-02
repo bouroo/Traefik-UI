@@ -82,7 +82,9 @@ export async function initDb(db: Database): Promise<void> {
       await Bun.write(credsPath, `Username: admin\nPassword: ${tempPassword}\n`);
       console.log(`  Credentials saved to: ${credsPath}`);
     } catch (err) {
-      console.log(`  Warning: Could not save credentials to file: ${err instanceof Error ? err.message : String(err)}`);
+      console.log(
+        `  Warning: Could not save credentials to file: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
 }
