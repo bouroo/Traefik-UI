@@ -22,13 +22,13 @@ A full-featured web UI for managing your Traefik reverse proxy. Monitor routers,
 
 ## Tech Stack
 
-| Component   | Technology                          |
-|-------------|-------------------------------------|
-| Backend     | Hono.js + Bun                       |
-| Database    | SQLite via `bun:sqlite`             |
-| Auth        | JWT + argon2id                        |
-| Frontend    | Vanilla JS + Tailwind CSS + Remix Icons |
-| Container   | Podman/Docker                       |
+| Component | Technology                              |
+| --------- | --------------------------------------- |
+| Backend   | Hono.js + Bun                           |
+| Database  | SQLite via `bun:sqlite`                 |
+| Auth      | JWT + argon2id                          |
+| Frontend  | Vanilla JS + Tailwind CSS + Remix Icons |
+| Container | Podman/Docker                           |
 
 ## Architecture
 
@@ -61,124 +61,137 @@ podman compose logs traefik-ui | grep "Password:"
 ```
 
 **Default credentials on first run:**
+
 - Username: `admin`
-- Password: *(see logs above)*
+- Password: _(see logs above)_
 
 ## Environment Variables
 
-| Variable             | Default                              | Description                           |
-|----------------------|--------------------------------------|---------------------------------------|
-| `PORT`               | `3000`                               | Server port                           |
-| `HOST`               | `0.0.0.0`                            | Server host                           |
-| `TRAEFIK_API_URL`    | `http://traefik:8080`                | Traefik API endpoint                  |
-| `DB_PATH`            | `./data/traefik-ui.db`               | SQLite database path                  |
-| `JWT_SECRET`         | `change-me-in-production-please`      | JWT signing secret (change in prod!)  |
-| `TRAEFIK_API_USERNAME` | *(empty)*                          | Optional Traefik API username         |
-| `TRAEFIK_API_PASSWORD` | *(empty)*                          | Optional Traefik API password         |
-| `ACCESS_LOG_PATH`    | *(empty)*                            | Path to Traefik access log file       |
-| `ACME_JSON_PATH`     | *(empty)*                            | Path to ACME certificates JSON file   |
-| `DYNAMIC_CONFIG_PATH` | *(empty)*                          | Path to Traefik dynamic config YAML   |
-| `STATIC_CONFIG_PATH`  | *(empty)*                          | Path to Traefik static config YAML    |
-| `LOG_LEVEL`          | `info`                               | Log level (`debug`, `info`, `silent`) |
-| `CORS_ORIGIN`        | `*`                                  | CORS allowed origin                   |
+| Variable               | Default                          | Description                           |
+| ---------------------- | -------------------------------- | ------------------------------------- |
+| `PORT`                 | `3000`                           | Server port                           |
+| `HOST`                 | `0.0.0.0`                        | Server host                           |
+| `TRAEFIK_API_URL`      | `http://traefik:8080`            | Traefik API endpoint                  |
+| `DB_PATH`              | `./data/traefik-ui.db`           | SQLite database path                  |
+| `JWT_SECRET`           | `change-me-in-production-please` | JWT signing secret (change in prod!)  |
+| `TRAEFIK_API_USERNAME` | _(empty)_                        | Optional Traefik API username         |
+| `TRAEFIK_API_PASSWORD` | _(empty)_                        | Optional Traefik API password         |
+| `ACCESS_LOG_PATH`      | _(empty)_                        | Path to Traefik access log file       |
+| `ACME_JSON_PATH`       | _(empty)_                        | Path to ACME certificates JSON file   |
+| `DYNAMIC_CONFIG_PATH`  | _(empty)_                        | Path to Traefik dynamic config YAML   |
+| `STATIC_CONFIG_PATH`   | _(empty)_                        | Path to Traefik static config YAML    |
+| `LOG_LEVEL`            | `info`                           | Log level (`debug`, `info`, `silent`) |
+| `CORS_ORIGIN`          | `*`                              | CORS allowed origin                   |
 
 ## API Endpoints
 
 ### Authentication (`/api/auth`)
-| Method | Endpoint           | Description                    | Auth Required |
-|--------|--------------------|--------------------------------|---------------|
-| POST   | `/api/auth/login`          | Login with username/password   | No            |
-| POST   | `/api/auth/logout`         | Logout (client discards token) | No            |
-| GET    | `/api/auth/me`             | Get current user info          | Yes           |
-| POST   | `/api/auth/change-password` | Change user password          | Yes           |
-| POST   | `/api/auth/refresh`        | Refresh JWT token              | Yes           |
+
+| Method | Endpoint                    | Description                    | Auth Required |
+| ------ | --------------------------- | ------------------------------ | ------------- |
+| POST   | `/api/auth/login`           | Login with username/password   | No            |
+| POST   | `/api/auth/logout`          | Logout (client discards token) | No            |
+| GET    | `/api/auth/me`              | Get current user info          | Yes           |
+| POST   | `/api/auth/change-password` | Change user password           | Yes           |
+| POST   | `/api/auth/refresh`         | Refresh JWT token              | Yes           |
 
 ### Dashboard (`/api/dashboard`)
-| Method | Endpoint           | Description                    | Auth Required |
-|--------|--------------------|--------------------------------|---------------|
-| GET    | `/api/dashboard/`        | Dashboard stats & overview     | Yes           |
-| GET    | `/api/dashboard/health`  | Dashboard health check         | Yes           |
+
+| Method | Endpoint                | Description                | Auth Required |
+| ------ | ----------------------- | -------------------------- | ------------- |
+| GET    | `/api/dashboard/`       | Dashboard stats & overview | Yes           |
+| GET    | `/api/dashboard/health` | Dashboard health check     | Yes           |
 
 ### Routers (`/api/routers`)
-| Method | Endpoint              | Description                | Auth Required |
-|--------|-----------------------|----------------------------|---------------|
-| GET    | `/api/routers/`             | List all routers (HTTP/TCP/UDP) | Yes      |
-| GET    | `/api/routers/http`         | List HTTP routers          | Yes           |
-| GET    | `/api/routers/http/:name`   | Get HTTP router detail     | Yes           |
-| GET    | `/api/routers/tcp`          | List TCP routers           | Yes           |
-| GET    | `/api/routers/tcp/:name`    | Get TCP router detail      | Yes           |
-| GET    | `/api/routers/udp`          | List UDP routers           | Yes           |
-| GET    | `/api/routers/udp/:name`    | Get UDP router detail      | Yes           |
+
+| Method | Endpoint                  | Description                     | Auth Required |
+| ------ | ------------------------- | ------------------------------- | ------------- |
+| GET    | `/api/routers/`           | List all routers (HTTP/TCP/UDP) | Yes           |
+| GET    | `/api/routers/http`       | List HTTP routers               | Yes           |
+| GET    | `/api/routers/http/:name` | Get HTTP router detail          | Yes           |
+| GET    | `/api/routers/tcp`        | List TCP routers                | Yes           |
+| GET    | `/api/routers/tcp/:name`  | Get TCP router detail           | Yes           |
+| GET    | `/api/routers/udp`        | List UDP routers                | Yes           |
+| GET    | `/api/routers/udp/:name`  | Get UDP router detail           | Yes           |
 
 > These routes are auto-generated from the protocol/resource registry. Adding a new protocol automatically creates the corresponding routes.
 
 ### Services (`/api/services`)
-| Method | Endpoint              | Description                | Auth Required |
-|--------|-----------------------|----------------------------|---------------|
-| GET    | `/api/services/`             | List all services (HTTP/TCP/UDP) | Yes    |
-| GET    | `/api/services/http`        | List HTTP services         | Yes           |
-| GET    | `/api/services/http/:name`  | Get HTTP service detail    | Yes           |
-| GET    | `/api/services/tcp`          | List TCP services          | Yes           |
-| GET    | `/api/services/tcp/:name`   | Get TCP service detail     | Yes           |
-| GET    | `/api/services/udp`         | List UDP services          | Yes           |
-| GET    | `/api/services/udp/:name`   | Get UDP service detail     | Yes           |
+
+| Method | Endpoint                   | Description                      | Auth Required |
+| ------ | -------------------------- | -------------------------------- | ------------- |
+| GET    | `/api/services/`           | List all services (HTTP/TCP/UDP) | Yes           |
+| GET    | `/api/services/http`       | List HTTP services               | Yes           |
+| GET    | `/api/services/http/:name` | Get HTTP service detail          | Yes           |
+| GET    | `/api/services/tcp`        | List TCP services                | Yes           |
+| GET    | `/api/services/tcp/:name`  | Get TCP service detail           | Yes           |
+| GET    | `/api/services/udp`        | List UDP services                | Yes           |
+| GET    | `/api/services/udp/:name`  | Get UDP service detail           | Yes           |
 
 > These routes are auto-generated from the protocol/resource registry. Adding a new protocol automatically creates the corresponding routes.
 
 ### Middlewares (`/api/middlewares`)
-| Method | Endpoint              | Description                | Auth Required |
-|--------|-----------------------|----------------------------|---------------|
-| GET    | `/api/middlewares/`           | List all middlewares (HTTP/TCP) | Yes      |
-| GET    | `/api/middlewares/http`       | List HTTP middlewares      | Yes           |
-| GET    | `/api/middlewares/http/:name` | Get HTTP middleware detail | Yes           |
-| GET    | `/api/middlewares/tcp`       | List TCP middlewares       | Yes           |
-| GET    | `/api/middlewares/tcp/:name`  | Get TCP middleware detail  | Yes           |
+
+| Method | Endpoint                      | Description                     | Auth Required |
+| ------ | ----------------------------- | ------------------------------- | ------------- |
+| GET    | `/api/middlewares/`           | List all middlewares (HTTP/TCP) | Yes           |
+| GET    | `/api/middlewares/http`       | List HTTP middlewares           | Yes           |
+| GET    | `/api/middlewares/http/:name` | Get HTTP middleware detail      | Yes           |
+| GET    | `/api/middlewares/tcp`        | List TCP middlewares            | Yes           |
+| GET    | `/api/middlewares/tcp/:name`  | Get TCP middleware detail       | Yes           |
 
 > These routes are auto-generated from the protocol/resource registry. Adding a new protocol automatically creates the corresponding routes.
 
 ### TLS (`/api/tls`)
-| Method | Endpoint              | Description                | Auth Required |
-|--------|-----------------------|----------------------------|---------------|
-| GET    | `/api/tls/certificates`    | List TLS certificates      | Yes           |
-| GET    | `/api/tls/options`        | TLS options                | Yes           |
+
+| Method | Endpoint                | Description           | Auth Required |
+| ------ | ----------------------- | --------------------- | ------------- |
+| GET    | `/api/tls/certificates` | List TLS certificates | Yes           |
+| GET    | `/api/tls/options`      | TLS options           | Yes           |
 
 ### Logs (`/api/logs`)
-| Method | Endpoint              | Description                | Auth Required |
-|--------|-----------------------|----------------------------|---------------|
-| GET    | `/api/logs/access`         | Access logs (with filtering) | Yes         |
-| GET    | `/api/logs/error`          | Error logs                 | Yes           |
+
+| Method | Endpoint           | Description                  | Auth Required |
+| ------ | ------------------ | ---------------------------- | ------------- |
+| GET    | `/api/logs/access` | Access logs (with filtering) | Yes           |
+| GET    | `/api/logs/error`  | Error logs                   | Yes           |
 
 ### Config File (`/api/configfile`)
-| Method | Endpoint                   | Description                         | Auth Required |
-|--------|----------------------------|-------------------------------------|---------------|
-| GET    | `/api/configfile/static`   | Traefik static config (YAML→JSON)   | Yes           |
-| GET    | `/api/configfile/dynamic`  | Traefik dynamic config (YAML→JSON)  | Yes           |
+
+| Method | Endpoint                  | Description                        | Auth Required |
+| ------ | ------------------------- | ---------------------------------- | ------------- |
+| GET    | `/api/configfile/static`  | Traefik static config (YAML→JSON)  | Yes           |
+| GET    | `/api/configfile/dynamic` | Traefik dynamic config (YAML→JSON) | Yes           |
 
 ### Entrypoints (`/api/entrypoints`)
-| Method | Endpoint              | Description                | Auth Required |
-|--------|-----------------------|----------------------------|---------------|
-| GET    | `/api/entrypoints/`          | List all entrypoints       | Yes           |
-| GET    | `/api/entrypoints/:name`     | Get entrypoint detail      | Yes           |
+
+| Method | Endpoint                 | Description           | Auth Required |
+| ------ | ------------------------ | --------------------- | ------------- |
+| GET    | `/api/entrypoints/`      | List all entrypoints  | Yes           |
+| GET    | `/api/entrypoints/:name` | Get entrypoint detail | Yes           |
 
 ### System (`/api/system`)
-| Method | Endpoint              | Description                | Auth Required |
-|--------|-----------------------|----------------------------|---------------|
-| GET    | `/api/system/stats`         | System stats (CPU, memory) | Yes           |
-| GET    | `/api/system/config`        | UI configuration           | Yes           |
-| GET    | `/api/system/health`       | System health (no auth)    | No            |
-| GET    | `/api/system/acme`         | ACME certificate summary   | Yes           |
+
+| Method | Endpoint             | Description                | Auth Required |
+| ------ | -------------------- | -------------------------- | ------------- |
+| GET    | `/api/system/stats`  | System stats (CPU, memory) | Yes           |
+| GET    | `/api/system/config` | UI configuration           | Yes           |
+| GET    | `/api/system/health` | System health (no auth)    | No            |
+| GET    | `/api/system/acme`   | ACME certificate summary   | Yes           |
 
 ### Overview (`/api/overview`)
-| Method | Endpoint              | Description                | Auth Required |
-|--------|-----------------------|----------------------------|---------------|
-| GET    | `/api/overview/`             | Traefik overview           | Yes           |
-| GET    | `/api/overview/raw`         | Raw overview data          | Yes           |
-| GET    | `/api/overview/version`     | Traefik version info       | Yes           |
+
+| Method | Endpoint                | Description          | Auth Required |
+| ------ | ----------------------- | -------------------- | ------------- |
+| GET    | `/api/overview/`        | Traefik overview     | Yes           |
+| GET    | `/api/overview/raw`     | Raw overview data    | Yes           |
+| GET    | `/api/overview/version` | Traefik version info | Yes           |
 
 ### Health
-| Method | Endpoint        | Description         | Auth Required |
-|--------|-----------------|--------------------|---------------|
-| GET    | `/api/health`   | Public health check | No            |
+
+| Method | Endpoint      | Description         | Auth Required |
+| ------ | ------------- | ------------------- | ------------- |
+| GET    | `/api/health` | Public health check | No            |
 
 ## Development
 

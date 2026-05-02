@@ -37,7 +37,7 @@
       // On page load, check if already logged in (has token in localStorage)
       // If token exists and is valid, redirect to /
       document.addEventListener('DOMContentLoaded', async function () {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('traefik_ui_token');
         if (token) {
           try {
             const res = await fetch('/api/auth/me', {
@@ -48,8 +48,8 @@
               return;
             }
           } catch (e) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            localStorage.removeItem('traefik_ui_token');
+            localStorage.removeItem('traefik_ui_user');
           }
         }
       });
@@ -118,8 +118,8 @@
             return;
           }
 
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('traefik_ui_token', data.token);
+          localStorage.setItem('traefik_ui_user', JSON.stringify(data.user));
           window.location.href = '/';
         } catch (err) {
           errorEl.textContent = 'Connection error. Please try again.';

@@ -5,7 +5,13 @@
 // Auth state
 const Auth = {
   token: localStorage.getItem('traefik_ui_token'),
-  user: JSON.parse(localStorage.getItem('traefik_ui_user') || 'null'),
+  user: (() => {
+    try {
+      return JSON.parse(localStorage.getItem('traefik_ui_user') || 'null');
+    } catch {
+      return null;
+    }
+  })(),
 
   // Check if user is authenticated
   isAuthenticated() {
@@ -94,9 +100,12 @@ const API = {
   getHttpServices: () => Auth.get('/api/services/http'),
   getTcpServices: () => Auth.get('/api/services/tcp'),
   getUdpServices: () => Auth.get('/api/services/udp'),
+  getService: (protocol, name) => Auth.get(`/api/services/${protocol}/${encodeURIComponent(name)}`),
   getMiddlewares: () => Auth.get('/api/middlewares'),
   getHttpMiddlewares: () => Auth.get('/api/middlewares/http'),
   getTcpMiddlewares: () => Auth.get('/api/middlewares/tcp'),
+  getMiddleware: (protocol, name) =>
+    Auth.get(`/api/middlewares/${protocol}/${encodeURIComponent(name)}`),
   getCertificates: () => Auth.get('/api/tls/certificates'),
   getAccessLogs: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
@@ -106,6 +115,47 @@ const API = {
   getSystemStats: () => Auth.get('/api/system/stats'),
   getOverview: () => Auth.get('/api/overview'),
   getVersion: () => Auth.get('/api/overview/version'),
+
+  // Config file operations
+  getDynamicConfigRaw: () => Auth.get('/api/configfile/dynamic?raw=true'),
+  getDynamicConfig: () => Auth.get('/api/configfile/dynamic'),
+  saveDynamicConfig: (yamlText) =>
+    Auth.fetch('/api/configfile/dynamic', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'text/plain' },
+      body: yamlText,
+    }).then((r) => r.json()),
+
+  // Static config operations
+  getStaticConfigRaw: () => Auth.get('/api/configfile/static?raw=true'),
+  saveStaticConfig: (yamlText) =>
+    Auth.fetch('/api/configfile/static', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'text/plain' },
+      body: yamlText,
+    }).then((r) => r.json()),
+
+  // Format YAML config via backend
+  formatConfig: (yamlText) =>
+    Auth.fetch('/api/configfile/format', {
+      method: 'POST',
+      body: JSON.stringify({ yaml: yamlText }),
+    }).then((r) => r.json()),
+
+  // Config CRUD operations
+  getConfigResource: (resourceType, protocol) => {
+    const qs = protocol ? `?protocol=${protocol}` : '';
+    return Auth.get(`/api/config-crud/${resourceType}${qs}`);
+  },
+  saveConfigResource: (resourceType, protocol, name, data) =>
+    Auth.fetch('/api/config-crud/' + resourceType, {
+      method: 'POST',
+      body: JSON.stringify({ protocol, name, data }),
+    }).then((r) => r.json()),
+  deleteConfigResource: (resourceType, protocol, name) =>
+    Auth.fetch(`/api/config-crud/${resourceType}/${protocol}/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    }).then((r) => r.json()),
 };
 
 // Login form handler
@@ -141,7 +191,7 @@ function initLoginForm() {
 
 // Show/hide appropriate screens
 function showLogin() {
-  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('app-screen').classList.add('hidden');
 }
 

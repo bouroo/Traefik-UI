@@ -1,4 +1,6 @@
 import { Database } from 'bun:sqlite';
+import * as path from 'node:path';
+import { config } from '../config';
 
 function generateRandomPassword(length: number = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
@@ -11,7 +13,7 @@ function generateRandomPassword(length: number = 12): string {
   return password;
 }
 
-export function initDb(db: Database): void {
+export async function initDb(db: Database): Promise<void> {
   // Create users table
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -72,5 +74,17 @@ export function initDb(db: Database): void {
     console.log('========================================');
     console.log('  Please change the password after first login!');
     console.log('========================================\n');
+
+    try {
+      const rawDir = path.dirname(config.db.path);
+      const credsDir = rawDir === '.' ? './data' : rawDir;
+      const credsPath = path.join(credsDir, 'admin-credentials.txt');
+      await Bun.write(credsPath, `Username: admin\nPassword: ${tempPassword}\n`);
+      console.log(`  Credentials saved to: ${credsPath}`);
+    } catch (err) {
+      console.log(
+        `  Warning: Could not save credentials to file: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
   }
 }

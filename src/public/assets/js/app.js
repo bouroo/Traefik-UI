@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { id: 'entrypoints', icon: 'ri-plug-line', label: 'EntryPoints', hash: '#/entrypoints' },
   { id: 'logs', icon: 'ri-file-list-3-line', label: 'Logs', hash: '#/logs' },
   { id: 'system', icon: 'ri-cpu-line', label: 'System', hash: '#/system' },
+  { id: 'configfile', icon: 'ri-file-code-line', label: 'Config', hash: '#/configfile' },
   { id: 'settings', icon: 'ri-settings-3-line', label: 'Settings', hash: '#/settings' },
 ];
 
@@ -62,6 +63,7 @@ const PAGE_TITLES = {
   entrypoints: { title: 'EntryPoints', subtitle: 'Network entry points' },
   logs: { title: 'Logs', subtitle: 'Traefik access and error logs' },
   system: { title: 'System', subtitle: 'Server resource utilization' },
+  configfile: { title: 'Dynamic Config', subtitle: 'Edit Traefik dynamic configuration' },
   settings: { title: 'Settings', subtitle: 'Application configuration' },
 };
 
@@ -135,22 +137,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderSidebar();
   initLogout();
   initLoginForm();
-  updateUserInfo();
 
-  // Check auth state
-  const hash = window.location.hash;
-  if (!hash || hash === '#/login') {
+  // Check auth state first, then route
+  const verified = await Auth.verify();
+  if (!verified) {
+    Auth.logout();
     showLogin();
+    if (window.location.hash && window.location.hash !== '#/login') {
+      window.location.hash = '#/login';
+    }
   } else {
-    await initAuth();
+    showApp();
+    updateUserInfo();
+    if (!window.location.hash || window.location.hash === '#/login') {
+      window.location.hash = '#/dashboard';
+    }
+    handleRoute();
   }
 
   // Start connection status polling
   updateConnectionStatus();
   setInterval(updateConnectionStatus, 30000);
-
-  // Handle initial hash
-  if (window.location.hash && window.location.hash !== '#/login') {
-    handleRoute();
-  }
 });

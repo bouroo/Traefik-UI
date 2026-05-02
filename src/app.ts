@@ -14,6 +14,7 @@ import { logs } from './api/logs';
 import { entrypoints } from './api/entrypoints';
 import { system } from './api/system';
 import { configfile } from './api/configfile';
+import { configCrud } from './api/config-crud';
 
 const app = new Hono();
 
@@ -48,15 +49,16 @@ app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISO
 
 app.route('/api', resources);
 app.route('/api/configfile', configfile);
+app.route('/api/config-crud', configCrud);
 
-// Serve static frontend files from src/public
+// Serve static frontend files from public
 // The frontend is a SPA — for any non-API, non-static path, serve index.html
 // First, serve static assets (CSS, JS, images)
-app.use('/assets/*', serveStatic({ root: './src/public' }));
+app.use('/assets/*', serveStatic({ root: './public' }));
 
 // For any other GET request, serve index.html (SPA fallback)
 // But skip API routes (they start with /api/)
-app.get('/*', serveStatic({ path: './src/public/index.html' }));
+app.get('/*', serveStatic({ path: './public/index.html' }));
 
 // Error handling
 app.onError((err, c) => {

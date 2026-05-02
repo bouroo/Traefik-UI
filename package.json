@@ -16,6 +16,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "ajv": "^8.20.0",
     "hono": "^4.12.16",
     "jsonwebtoken": "^9.0.3"
   },
