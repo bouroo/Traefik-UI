@@ -1,4 +1,5 @@
 import { config } from '../config';
+import { logError } from '../lib/logger';
 
 // TypeScript interfaces for Traefik API responses
 export interface TraefikRouter {
@@ -112,17 +113,15 @@ async function fetchTraefik<T>(path: string): Promise<T | null> {
     const response = await fetch(url, { headers });
 
     if (!response.ok) {
-      console.error(
-        `[${new Date().toISOString()}] Traefik API error: ${response.status} ${response.statusText} for ${path}`
-      );
+      logError(`Traefik API error: ${response.status} ${response.statusText} for ${path}`);
       return null;
     }
 
     const data = await response.json();
     return data as T;
   } catch (error) {
-    console.error(
-      `[${new Date().toISOString()}] Traefik API fetch failed for ${path}:`,
+    logError(
+      `Traefik API fetch failed for ${path}:`,
       error instanceof Error ? error.message : String(error)
     );
     return null;

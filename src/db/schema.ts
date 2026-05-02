@@ -1,6 +1,7 @@
 import { Database } from 'bun:sqlite';
 import * as path from 'node:path';
 import { config } from '../config';
+import { logInfo, logError } from '../lib/logger';
 
 function generateRandomPassword(length: number = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
@@ -66,24 +67,19 @@ export async function initDb(db: Database): Promise<void> {
       passwordHash,
     ]);
 
-    console.log('\n========================================');
-    console.log('  FIRST RUN: Default admin user created');
-    console.log('========================================');
-    console.log(`  Username: admin`);
-    console.log(`  Password: ${tempPassword}`);
-    console.log('========================================');
-    console.log('  Please change the password after first login!');
-    console.log('========================================\n');
+    logInfo('First run: Default admin user created');
+    logInfo(`Username: admin, Password: ${tempPassword}`);
+    logInfo('Please change the password after first login');
 
     try {
       const rawDir = path.dirname(config.db.path);
       const credsDir = rawDir === '.' ? './data' : rawDir;
       const credsPath = path.join(credsDir, 'admin-credentials.txt');
       await Bun.write(credsPath, `Username: admin\nPassword: ${tempPassword}\n`);
-      console.log(`  Credentials saved to: ${credsPath}`);
+      logInfo(`Credentials saved to: ${credsPath}`);
     } catch (err) {
-      console.log(
-        `  Warning: Could not save credentials to file: ${err instanceof Error ? err.message : String(err)}`
+      logError(
+        `Could not save credentials to file: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }

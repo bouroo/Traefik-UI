@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { config } from '../config';
 import { authMiddleware } from '../auth/middleware';
+import { logError } from '../lib/logger';
 
 const logs = new Hono();
 
@@ -238,8 +239,8 @@ logs.get('/access', async (c) => {
       hasMore,
     });
   } catch (error) {
-    console.error(
-      `[logs] Error reading access log:`,
+    logError(
+      'Error reading access log:',
       error instanceof Error ? error.message : String(error)
     );
     return c.json(
