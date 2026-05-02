@@ -68,6 +68,8 @@ services:
       - ACCESS_LOG_PATH=/var/log/traefik/access.log
       - ACME_JSON_PATH=/etc/traefik/acme.json
       - DYNAMIC_CONFIG_PATH=/etc/traefik/dynamic.yml
+      # Optional: Static config file path (uncomment to enable static config editing)
+      # - STATIC_CONFIG_PATH=/etc/traefik/static.yml
       # Log level
       - LOG_LEVEL=info
       # CORS
@@ -82,8 +84,10 @@ services:
       - ./data/traefik/logs:/var/log/traefik:ro
       # ACME certificates (read-only access)
       - ./data/traefik/acme.json:/etc/traefik/acme.json:ro
-      # Traefik dynamic config (read-only access)
-      - ./data/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      # Traefik dynamic config (read-write for UI management)
+      - ./data/traefik/dynamic.yml:/etc/traefik/dynamic.yml
+      # Traefik static config (read-write for UI management - uncomment to enable)
+      # - ./data/traefik/static.yml:/etc/traefik/static.yml
     networks:
       - traefik-net
     security_opt:

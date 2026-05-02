@@ -114,6 +114,42 @@ const API = {
   getSystemStats: () => Auth.get('/api/system/stats'),
   getOverview: () => Auth.get('/api/overview'),
   getVersion: () => Auth.get('/api/overview/version'),
+
+  // Config file operations
+  getDynamicConfigRaw: () => Auth.get('/api/configfile/dynamic?raw=true'),
+  getDynamicConfig: () => Auth.get('/api/configfile/dynamic'),
+  saveDynamicConfig: (yamlText) => Auth.fetch('/api/configfile/dynamic', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'text/plain' },
+    body: yamlText,
+  }).then(r => r.json()),
+
+  // Static config operations
+  getStaticConfigRaw: () => Auth.get('/api/configfile/static?raw=true'),
+  saveStaticConfig: (yamlText) => Auth.fetch('/api/configfile/static', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'text/plain' },
+    body: yamlText,
+  }).then(r => r.json()),
+
+  // Format YAML config via backend
+  formatConfig: (yamlText) => Auth.fetch('/api/configfile/format', {
+    method: 'POST',
+    body: JSON.stringify({ yaml: yamlText }),
+  }).then(r => r.json()),
+  
+  // Config CRUD operations
+  getConfigResource: (resourceType, protocol) => {
+    const qs = protocol ? `?protocol=${protocol}` : '';
+    return Auth.get(`/api/config-crud/${resourceType}${qs}`);
+  },
+  saveConfigResource: (resourceType, protocol, name, data) => Auth.fetch('/api/config-crud/' + resourceType, {
+    method: 'POST',
+    body: JSON.stringify({ protocol, name, data }),
+  }).then(r => r.json()),
+  deleteConfigResource: (resourceType, protocol, name) => Auth.fetch(`/api/config-crud/${resourceType}/${protocol}/${encodeURIComponent(name)}`, {
+    method: 'DELETE',
+  }).then(r => r.json()),
 };
 
 // Login form handler

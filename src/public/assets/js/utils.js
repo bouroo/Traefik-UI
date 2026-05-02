@@ -92,6 +92,12 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleString();
 }
 
+// Strip @provider suffix from resource names (e.g., "demo-service@file" → "demo-service")
+function stripProviderSuffix(name) {
+  const idx = name.indexOf('@');
+  return idx > 0 ? name.substring(0, idx) : name;
+}
+
 // Expose all utilities globally for backward compatibility
 window.escapeHtml = escapeHtml;
 window.renderStatusBadge = renderStatusBadge;
@@ -101,3 +107,4 @@ window.showToast = showToast;
 window.formatBytes = formatBytes;
 window.formatUptime = formatUptime;
 window.formatDate = formatDate;
+window.stripProviderSuffix = stripProviderSuffix;

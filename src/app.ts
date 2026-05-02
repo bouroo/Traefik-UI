@@ -14,6 +14,7 @@ import { logs } from './api/logs';
 import { entrypoints } from './api/entrypoints';
 import { system } from './api/system';
 import { configfile } from './api/configfile';
+import { configCrud } from './api/config-crud';
 
 const app = new Hono();
 
@@ -48,6 +49,7 @@ app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISO
 
 app.route('/api', resources);
 app.route('/api/configfile', configfile);
+app.route('/api/config-crud', configCrud);
 
 // Serve static frontend files from public
 // The frontend is a SPA — for any non-API, non-static path, serve index.html
