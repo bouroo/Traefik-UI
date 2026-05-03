@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { serveStatic } from 'hono/bun';
 import { config } from './config';
+import { logError } from './lib/logger';
 
 // Import all route modules
 import { auth } from './auth/routes';
@@ -62,7 +63,7 @@ app.get('/*', serveStatic({ path: './public/index.html' }));
 
 // Error handling
 app.onError((err, c) => {
-  console.error(`[${new Date().toISOString()}] Error:`, err);
+  logError('Error:', err);
   return c.json(
     {
       error: 'Internal Server Error',
