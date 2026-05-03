@@ -8,15 +8,24 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   silent: 4,
 };
 
-function getLevel(): LogLevel {
-  const env = Bun.env.LOG_LEVEL?.toLowerCase() || 'info';
-  if (env === 'debug') return 'debug';
-  if (env === 'silent') return 'silent';
+function resolveLogLevel(env?: string): LogLevel {
+  const normalized = env?.toLowerCase();
+  if (normalized === 'debug') return 'debug';
+  if (normalized === 'warn') return 'warn';
+  if (normalized === 'error') return 'error';
+  if (normalized === 'silent') return 'silent';
   return 'info';
 }
 
+let currentLevel: LogLevel = resolveLogLevel(Bun.env.LOG_LEVEL);
+
 function shouldLog(level: LogLevel): boolean {
-  return LOG_LEVELS[level] >= LOG_LEVELS[getLevel()];
+  return LOG_LEVELS[level] >= LOG_LEVELS[currentLevel];
+}
+
+/** @internal Test-only hook to override the cached log level */
+export function _setLogLevel(level: LogLevel): void {
+  currentLevel = level;
 }
 
 function formatTimestamp(): string {
