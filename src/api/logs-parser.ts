@@ -80,8 +80,7 @@ export function parseJSONLine(line: string): AccessLogLine | null {
 }
 
 export function isJSONLine(line: string): boolean {
-  const trimmed = line.trim();
-  return trimmed.startsWith('{');
+  return line.startsWith('{');
 }
 
 export function applyFilter(lines: AccessLogLine[], filter: string): AccessLogLine[] {

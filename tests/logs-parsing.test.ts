@@ -11,7 +11,8 @@ import {
 describe('logs-parser', () => {
   describe('CLF_REGEX', () => {
     it('should match valid CLF format line', () => {
-      const line = '192.168.1.1 - user [10/Oct/2023:13:55:36 +0000] "GET /api/test HTTP/1.1" 200 1234 "-" "Mozilla/5.0" 0.123';
+      const line =
+        '192.168.1.1 - user [10/Oct/2023:13:55:36 +0000] "GET /api/test HTTP/1.1" 200 1234 "-" "Mozilla/5.0" 0.123';
       expect(CLF_REGEX.test(line)).toBe(true);
     });
 
@@ -23,7 +24,8 @@ describe('logs-parser', () => {
 
   describe('parseCLFLine', () => {
     it('should parse valid CLF line into AccessLogLine', () => {
-      const line = '192.168.1.1 - admin [10/Oct/2023:13:55:36 +0000] "POST /api/users HTTP/1.1" 201 5678 "https://example.com" "Chrome/120.0" 0.456';
+      const line =
+        '192.168.1.1 - admin [10/Oct/2023:13:55:36 +0000] "POST /api/users HTTP/1.1" 201 5678 "https://example.com" "Chrome/120.0" 0.456';
       const result = parseCLFLine(line);
 
       expect(result).not.toBeNull();
@@ -75,7 +77,8 @@ describe('logs-parser', () => {
 
   describe('parseJSONLine', () => {
     it('should parse valid JSON line with time field', () => {
-      const line = '{"time":"2023-10-10T13:55:36Z","method":"GET","path":"/api/test","protocol":"HTTP/1.1","status":200,"size":1234,"duration":0.05,"client_ip":"192.168.1.100","user":"testuser","referer":"https://google.com","ua":"Chrome/120"}';
+      const line =
+        '{"time":"2023-10-10T13:55:36Z","method":"GET","path":"/api/test","protocol":"HTTP/1.1","status":200,"size":1234,"duration":0.05,"client_ip":"192.168.1.100","user":"testuser","referer":"https://google.com","ua":"Chrome/120"}';
       const result = parseJSONLine(line);
 
       expect(result).not.toBeNull();
@@ -95,7 +98,8 @@ describe('logs-parser', () => {
     });
 
     it('should parse JSON with alternative field names', () => {
-      const line = '{"Timestamp":"2023-10-10T13:55:36Z","RequestMethod":"POST","RequestPath":"/api/create","RequestProtocol":"HTTP/2","ResponseStatus":201,"BodyBytesSent":512,"RequestDuration":0.1,"RemoteAddr":"10.0.0.1","remoteUser":"admin","httpReferer":"","user_agent":"Safari"}';
+      const line =
+        '{"Timestamp":"2023-10-10T13:55:36Z","RequestMethod":"POST","RequestPath":"/api/create","RequestProtocol":"HTTP/2","ResponseStatus":201,"BodyBytesSent":512,"RequestDuration":0.1,"RemoteAddr":"10.0.0.1","remoteUser":"admin","httpReferer":"","user_agent":"Safari"}';
       const result = parseJSONLine(line);
 
       expect(result).not.toBeNull();
@@ -161,14 +165,18 @@ describe('logs-parser', () => {
       expect(isJSONLine('{"method":"GET"}')).toBe(true);
     });
 
-    it('should return true for whitespace-prefixed JSON', () => {
-      expect(isJSONLine('  {"method":"GET"}')).toBe(true);
-      expect(isJSONLine('\t{"method":"GET"}')).toBe(true);
-      expect(isJSONLine('\n{"method":"GET"}')).toBe(true);
+    it('should return false for whitespace-prefixed JSON since caller must pre-trim', () => {
+      expect(isJSONLine('  {"method":"GET"}')).toBe(false);
+      expect(isJSONLine('\t{"method":"GET"}')).toBe(false);
+      expect(isJSONLine('\n{"method":"GET"}')).toBe(false);
     });
 
     it('should return false for CLF line', () => {
-      expect(isJSONLine('192.168.1.1 - user [10/Oct/2023:13:55:36 +0000] "GET /api HTTP/1.1" 200 100 "-" "-" 0.1')).toBe(false);
+      expect(
+        isJSONLine(
+          '192.168.1.1 - user [10/Oct/2023:13:55:36 +0000] "GET /api HTTP/1.1" 200 100 "-" "-" 0.1'
+        )
+      ).toBe(false);
     });
 
     it('should return false for plain text', () => {
@@ -184,17 +192,82 @@ describe('logs-parser', () => {
 
   describe('applyFilter', () => {
     const sampleLines: AccessLogLine[] = [
-      { timestamp: '2023-10-10', method: 'GET', path: '/api/users', protocol: 'HTTP/1.1', status: 200, bodyBytesSent: 100, requestTime: 0.05, remoteAddr: '192.168.1.1', remoteUser: '', httpReferer: '', httpUserAgent: '', raw: '' },
-      { timestamp: '2023-10-10', method: 'POST', path: '/api/users', protocol: 'HTTP/1.1', status: 201, bodyBytesSent: 50, requestTime: 0.1, remoteAddr: '192.168.1.2', remoteUser: '', httpReferer: '', httpUserAgent: '', raw: '' },
-      { timestamp: '2023-10-10', method: 'GET', path: '/api/orders', protocol: 'HTTP/1.1', status: 500, bodyBytesSent: 0, requestTime: 0.5, remoteAddr: '192.168.1.3', remoteUser: '', httpReferer: '', httpUserAgent: '', raw: '' },
-      { timestamp: '2023-10-10', method: 'DELETE', path: '/api/users/1', protocol: 'HTTP/1.1', status: 404, bodyBytesSent: 0, requestTime: 0.02, remoteAddr: '192.168.1.4', remoteUser: '', httpReferer: '', httpUserAgent: '', raw: '' },
-      { timestamp: '2023-10-10', method: 'GET', path: '/html/page.html', protocol: 'HTTP/1.1', status: 503, bodyBytesSent: 0, requestTime: 1.0, remoteAddr: '192.168.1.5', remoteUser: '', httpReferer: '', httpUserAgent: '', raw: '' },
+      {
+        timestamp: '2023-10-10',
+        method: 'GET',
+        path: '/api/users',
+        protocol: 'HTTP/1.1',
+        status: 200,
+        bodyBytesSent: 100,
+        requestTime: 0.05,
+        remoteAddr: '192.168.1.1',
+        remoteUser: '',
+        httpReferer: '',
+        httpUserAgent: '',
+        raw: '',
+      },
+      {
+        timestamp: '2023-10-10',
+        method: 'POST',
+        path: '/api/users',
+        protocol: 'HTTP/1.1',
+        status: 201,
+        bodyBytesSent: 50,
+        requestTime: 0.1,
+        remoteAddr: '192.168.1.2',
+        remoteUser: '',
+        httpReferer: '',
+        httpUserAgent: '',
+        raw: '',
+      },
+      {
+        timestamp: '2023-10-10',
+        method: 'GET',
+        path: '/api/orders',
+        protocol: 'HTTP/1.1',
+        status: 500,
+        bodyBytesSent: 0,
+        requestTime: 0.5,
+        remoteAddr: '192.168.1.3',
+        remoteUser: '',
+        httpReferer: '',
+        httpUserAgent: '',
+        raw: '',
+      },
+      {
+        timestamp: '2023-10-10',
+        method: 'DELETE',
+        path: '/api/users/1',
+        protocol: 'HTTP/1.1',
+        status: 404,
+        bodyBytesSent: 0,
+        requestTime: 0.02,
+        remoteAddr: '192.168.1.4',
+        remoteUser: '',
+        httpReferer: '',
+        httpUserAgent: '',
+        raw: '',
+      },
+      {
+        timestamp: '2023-10-10',
+        method: 'GET',
+        path: '/html/page.html',
+        protocol: 'HTTP/1.1',
+        status: 503,
+        bodyBytesSent: 0,
+        requestTime: 1.0,
+        remoteAddr: '192.168.1.5',
+        remoteUser: '',
+        httpReferer: '',
+        httpUserAgent: '',
+        raw: '',
+      },
     ];
 
     it('should filter by status:5xx (5xx range)', () => {
       const result = applyFilter(sampleLines, 'status:5xx');
       expect(result.length).toBe(2);
-      expect(result.map(l => l.status)).toEqual([500, 503]);
+      expect(result.map((l) => l.status)).toEqual([500, 503]);
     });
 
     it('should filter by status:404 exact match', () => {
@@ -206,7 +279,7 @@ describe('logs-parser', () => {
     it('should filter by method:GET case-insensitively', () => {
       const result = applyFilter(sampleLines, 'method:get');
       expect(result.length).toBe(3);
-      expect(result.every(l => l.method === 'GET')).toBe(true);
+      expect(result.every((l) => l.method === 'GET')).toBe(true);
     });
 
     it('should filter by method:POST case-insensitively', () => {
@@ -218,13 +291,13 @@ describe('logs-parser', () => {
     it('should filter by path substring match', () => {
       const result = applyFilter(sampleLines, 'path:/api');
       expect(result.length).toBe(4);
-      expect(result.every(l => l.path.includes('/api'))).toBe(true);
+      expect(result.every((l) => l.path.includes('/api'))).toBe(true);
     });
 
     it('should filter by path:/users substring', () => {
       const result = applyFilter(sampleLines, 'path:/users');
       expect(result.length).toBe(3);
-      expect(result.every(l => l.path.includes('/users'))).toBe(true);
+      expect(result.every((l) => l.path.includes('/users'))).toBe(true);
     });
 
     it('should return all lines for unknown filter field', () => {
@@ -252,7 +325,20 @@ describe('logs-parser', () => {
     it('should filter path containing colons (e.g., URL)', () => {
       const linesWithUrl: AccessLogLine[] = [
         ...sampleLines,
-        { timestamp: '2023-10-10', method: 'GET', path: 'http://example.com/api', protocol: 'HTTP/1.1', status: 200, bodyBytesSent: 100, requestTime: 0.05, remoteAddr: '192.168.1.1', remoteUser: '', httpReferer: '', httpUserAgent: '', raw: '' },
+        {
+          timestamp: '2023-10-10',
+          method: 'GET',
+          path: 'http://example.com/api',
+          protocol: 'HTTP/1.1',
+          status: 200,
+          bodyBytesSent: 100,
+          requestTime: 0.05,
+          remoteAddr: '192.168.1.1',
+          remoteUser: '',
+          httpReferer: '',
+          httpUserAgent: '',
+          raw: '',
+        },
       ];
       const result = applyFilter(linesWithUrl, 'path:http://example.com');
       expect(result.length).toBe(1);

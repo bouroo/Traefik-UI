@@ -17,21 +17,70 @@ logs.use('*', authMiddleware);
 // Re-export for use by other modules
 export type { AccessLogLine } from './logs-parser';
 
+const AVG_LINE_LENGTH = 256;
+
+async function countFileLines(filePath: string): Promise<number> {
+  const file = Bun.file(filePath);
+  const stats = await file.stat();
+  const fileSize = stats.size;
+  if (fileSize === 0) return 0;
+
+  const CHUNK_SIZE = 1024 * 1024;
+  let count = 0;
+  let pos = 0;
+
+  while (pos < fileSize) {
+    const end = Math.min(pos + CHUNK_SIZE, fileSize);
+    const buffer = await file.slice(pos, end).bytes();
+    for (let i = 0; i < buffer.length; i++) {
+      if (buffer[i] === 0x0A) count++;
+    }
+    pos = end;
+  }
+
+  return count + 1;
+}
+
 async function readLastLines(
   filePath: string,
   totalLines: number,
   offset: number = 0
 ): Promise<{ lines: string[]; totalFileLines: number }> {
-  const stats = await Bun.file(filePath).stat();
+  const file = Bun.file(filePath);
+  const stats = await file.stat();
   const fileSize = stats.size;
 
   if (fileSize === 0) {
     return { lines: [], totalFileLines: 0 };
   }
 
-  const content = await Bun.file(filePath).text();
-  const allLines = content.split('\n');
-  const totalFileLines = allLines.length;
+  const totalFileLines = await countFileLines(filePath);
+
+  const neededLines = totalLines + offset;
+
+  let readSize = Math.min(fileSize, neededLines * AVG_LINE_LENGTH + 65536);
+
+  let allLines: string[];
+
+  while (true) {
+    const startPos = Math.max(0, fileSize - readSize);
+    const content = await file.slice(startPos).text();
+    allLines = content.split('\n');
+
+    if (startPos > 0) {
+      allLines.shift();
+    }
+
+    if (allLines.length > 0 && allLines[allLines.length - 1] === '') {
+      allLines.pop();
+    }
+
+    if (allLines.length >= neededLines || readSize >= fileSize) {
+      break;
+    }
+
+    readSize = Math.min(fileSize, readSize * 2);
+  }
 
   const endIdx = allLines.length - offset;
   const startIdx = Math.max(0, endIdx - totalLines);
@@ -87,7 +136,7 @@ logs.get('/access', async (c) => {
     }
 
     const filteredLines = applyFilter(parsedLines, filter);
-    const hasMore = offset + filteredLines.length < totalFileLines;
+    const hasMore = offset + rawLines.length < totalFileLines;
 
     return c.json({
       lines: filteredLines,
