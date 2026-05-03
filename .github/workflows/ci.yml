@@ -29,18 +29,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Format
-        run: |
-          bun run format
-          if ! git diff --exit-code; then
-            echo "Formatting issues detected. Auto-fixing and pushing..."
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -am "style: auto-fix formatting [skip ci]"
-            git push
-            echo "::error::Formatting was fixed and pushed. CI will re-run automatically."
-            exit 1
-          fi
+      - name: Format check
+        run: bun run format:check
 
       - name: Lint
         run: bun run lint

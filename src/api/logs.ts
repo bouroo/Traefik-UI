@@ -33,7 +33,7 @@ async function countFileLines(filePath: string): Promise<number> {
     const end = Math.min(pos + CHUNK_SIZE, fileSize);
     const buffer = await file.slice(pos, end).bytes();
     for (let i = 0; i < buffer.length; i++) {
-      if (buffer[i] === 0x0A) count++;
+      if (buffer[i] === 0x0a) count++;
     }
     pos = end;
   }
