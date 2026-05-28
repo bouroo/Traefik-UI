@@ -2,10 +2,11 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { serveStatic } from 'hono/bun';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { config } from './config';
 import { logError } from './lib/logger';
 
-// Import all route modules
 import { auth } from './auth/routes';
 import { dashboard } from './api/dashboard';
 import { overview } from './api/overview';
@@ -17,9 +18,12 @@ import { system } from './api/system';
 import { configfile } from './api/configfile';
 import { configCrud } from './api/config-crud';
 
+const frontendDir = existsSync(resolve('./public'))
+  ? './public'
+  : resolve(import.meta.dir, '../../frontend/src');
+
 const app = new Hono();
 
-// Global middleware
 app.use(
   '*',
   cors({
@@ -31,12 +35,10 @@ app.use(
   })
 );
 
-// Logger middleware (skip in production/test)
 if (config.logLevel !== 'silent') {
   app.use('*', logger());
 }
 
-// API routes
 app.route('/api/auth', auth);
 app.route('/api/dashboard', dashboard);
 app.route('/api/overview', overview);
@@ -45,23 +47,15 @@ app.route('/api/logs', logs);
 app.route('/api/entrypoints', entrypoints);
 app.route('/api/system', system);
 
-// Health check (no auth) - must be before resources mount to avoid being shadowed
 app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 app.route('/api', resources);
 app.route('/api/configfile', configfile);
 app.route('/api/config-crud', configCrud);
 
-// Serve static frontend files from public
-// The frontend is a SPA — for any non-API, non-static path, serve index.html
-// First, serve static assets (CSS, JS, images)
-app.use('/assets/*', serveStatic({ root: './public' }));
+app.use('/assets/*', serveStatic({ root: frontendDir }));
+app.get('/*', serveStatic({ path: resolve(frontendDir, 'index.html') }));
 
-// For any other GET request, serve index.html (SPA fallback)
-// But skip API routes (they start with /api/)
-app.get('/*', serveStatic({ path: './public/index.html' }));
-
-// Error handling
 app.onError((err, c) => {
   logError('Error:', err);
   return c.json(
@@ -73,12 +67,10 @@ app.onError((err, c) => {
   );
 });
 
-// 404 for unmatched API routes
 app.notFound((c) => {
   if (c.req.path.startsWith('/api/')) {
     return c.json({ error: 'Not found', path: c.req.path }, 404);
   }
-  // For non-API, serve index.html (SPA routing)
   return c.json({ error: 'Not found' }, 404);
 });
 

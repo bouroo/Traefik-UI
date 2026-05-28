@@ -24,17 +24,19 @@ A full-featured web UI for managing your Traefik reverse proxy. Monitor routers,
 
 | Component | Technology                              |
 | --------- | --------------------------------------- |
+| Monorepo  | Turborepo + Bun Workspaces              |
 | Backend   | Hono.js + Bun                           |
 | Database  | SQLite via `bun:sqlite`                 |
 | Auth      | JWT + argon2id                          |
 | Frontend  | Vanilla JS + Tailwind CSS + Remix Icons |
+| Shared    | TypeScript type definitions             |
 | Container | Podman/Docker                           |
 
 ## Architecture
 
 Traefik-UI uses a **registry-driven architecture** to eliminate code duplication and simplify adding new Traefik features.
 
-The core design is a single source of truth — the **protocol/resource registry** (`src/traefik/registry.ts`) — which defines all protocols (HTTP, TCP, UDP), resource types (routers, services, middlewares), and their relationships. The generic Traefik client and API routes auto-generate from this registry.
+The core design is a single source of truth — the **protocol/resource registry** (`packages/backend/src/traefik/registry.ts`) — which defines all protocols (HTTP, TCP, UDP), resource types (routers, services, middlewares), and their relationships. The generic Traefik client and API routes auto-generate from this registry.
 
 ```
 Registry (data) → Generic client (fetch) → Generic routes (/api) → Page modules (UI)
@@ -196,19 +198,19 @@ podman compose logs traefik-ui | grep "Password:"
 ## Development
 
 ```bash
-# Install dependencies
+# Install dependencies (all packages)
 bun install
 
 # Start dev server with auto-reload
 bun run dev
 
-# Type check
+# Type check all packages
 bun run typecheck
 
 # Run all tests
-bun test
+bun run test
 
-# Lint
+# Lint all packages
 bun run lint
 
 # Format code
@@ -224,72 +226,32 @@ The dev server runs with `--watch` mode for auto-reload on changes. The test sui
 
 ```
 Traefik-UI/
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                    # CI pipeline (typecheck, build)
-│       └── release.yml               # Release workflow
-├── src/
-│   ├── index.ts                      # Entry point, server bootstrap
-│   ├── app.ts                        # Main Hono app, route registration, middleware
-│   ├── config.ts                     # Environment variable configuration
-│   ├── auth/
-│   │   ├── routes.ts                 # Auth endpoints (login, logout, me, change-password, refresh)
-│   │   └── middleware.ts             # JWT verification middleware
-│   ├── api/
-│   │   ├── dashboard.ts              # Dashboard stats endpoint
-│   │   ├── resources.ts              # Generic resource endpoints (routers, services, middlewares)
-│   │   ├── tls.ts                    # TLS certificate viewer
-│   │   ├── logs.ts                   # Access/error log viewer
-│   │   ├── entrypoints.ts            # Entrypoints viewer
-│   │   ├── system.ts                 # System stats, config, health
-│   │   ├── overview.ts               # Traefik overview data
-│   │   └── configfile.ts             # Static/dynamic config file viewer
-│   ├── traefik/
-│   │   ├── client.ts                 # Generic Traefik API client with type definitions
-│   │   └── registry.ts               # Protocol/resource type registry
-│   ├── db/
-│   │   ├── index.ts                  # Database initialization
-│   │   └── schema.ts                 # SQLite schema definitions
-│   └── public/
-│       ├── index.html                # Main SPA entry point
-│       ├── login.html                # Login page
-│       └── assets/
-│           ├── css/
-│           │   └── style.css         # Custom styles
-│           └── js/
-│               ├── app.js            # Main app logic, navigation, routing
-│               ├── auth.js           # Authentication logic
-│               ├── dashboard.js      # Dashboard UI
-│               ├── routers.js        # Routers UI
-│               ├── services.js       # Services UI
-│               ├── middlewares.js    # Middlewares UI
-│               ├── tls.js            # TLS certificates UI
-│               ├── system.js         # System stats UI
-│               ├── router.js         # SPA router
-│               ├── utils.js          # Shared utilities
-│               └── components.js     # Reusable UI components
-├── tests/                            # Integration and unit tests
-│   ├── integration.test.ts
-│   ├── api-core.test.ts
-│   ├── api-extra.test.ts
-│   ├── auth.test.ts
-│   ├── client.test.ts
-│   ├── mock-traefik.ts
-│   ├── helpers.ts
-│   ├── env.ts
-│   └── integration-helpers.ts
-├── traefik/
-│   └── dynamic.yml                   # Sample Traefik dynamic config
-├── compose.yml                       # Podman/Docker Compose deployment
-├── Containerfile                     # Container build
-├── data/                             # SQLite database storage (created at runtime)
-├── bun.lock                          # Bun lockfile
-├── package.json                      # Node/Bun dependencies
-├── tsconfig.json                     # TypeScript config
-├── eslint.config.mjs                 # ESLint configuration
-├── .prettierrc                       # Prettier configuration
-├── bunfig.toml                       # Bun configuration
-└── LICENSE                           # MIT License
+├── packages/
+│   ├── backend/                # @traefik-ui/backend — Hono.js API server
+│   │   ├── src/
+│   │   │   ├── index.ts        # Server entry point
+│   │   │   ├── app.ts          # Hono app, route registration, middleware
+│   │   │   ├── config.ts       # Environment configuration
+│   │   │   ├── api/            # API route modules
+│   │   │   ├── auth/           # Auth routes + JWT middleware
+│   │   │   ├── traefik/        # Traefik API client + registry
+│   │   │   ├── db/             # SQLite schema + connection
+│   │   │   └── lib/            # Logger
+│   │   └── tests/              # Integration and unit tests
+│   ├── frontend/               # @traefik-ui/frontend — SPA client
+│   │   └── src/
+│   │       ├── index.html
+│   │       ├── login.html
+│   │       └── assets/
+│   │           ├── js/         # Page modules + utilities
+│   │           └── css/        # Styles
+│   └── shared/                 # @traefik-ui/shared — shared types
+│       └── src/types/
+│           └── traefik.ts      # Traefik API type definitions
+├── turbo.json                  # Turborepo task config
+├── compose.yml                 # Docker/Podman Compose
+├── Containerfile               # Multi-stage container build
+└── .github/workflows/          # CI/CD pipelines
 ```
 
 ## License
