@@ -22,25 +22,27 @@ const TEST_USER = {
 };
 
 export async function setupTestUser(): Promise<void> {
-  // Reinitialize db if it was closed by previous test suite
   resetDb();
   const db = getDb();
 
-  // Clean any existing test data
   db.run('DELETE FROM users');
 
-  // Create test user
   const passwordHash = await Bun.password.hash(TEST_USER.password, {
     algorithm: 'argon2id',
     timeCost: 1,
     memoryCost: 4096,
-  }); // low params for speed
+  });
   const result = db.run('INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)', [
     TEST_USER.username,
     passwordHash,
   ]);
   TEST_USER.userId = Number(result.lastInsertRowid || 1);
   TEST_USER.token = generateToken(TEST_USER.userId, TEST_USER.username);
+
+  const superAdminRole = db.query('SELECT id FROM roles WHERE name = ?').get('super_admin') as { id: number } | undefined;
+  if (superAdminRole) {
+    db.run('INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)', [TEST_USER.userId, superAdminRole.id]);
+  }
 }
 
 export function getTestToken(): string {

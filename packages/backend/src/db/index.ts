@@ -1,6 +1,7 @@
 import { Database } from 'bun:sqlite';
 import { config } from '../config';
 import { initDb } from './schema';
+import { runMigrations } from './migrations/runner';
 
 let db: Database | undefined;
 
@@ -10,6 +11,7 @@ export function getDb(): Database {
     db.run('PRAGMA journal_mode = WAL');
     db.run('PRAGMA foreign_keys = ON');
     initDb(db);
+    runMigrations(db);
   }
   return db;
 }

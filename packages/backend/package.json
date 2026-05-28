@@ -17,7 +17,8 @@
     "@traefik-ui/shared": "workspace:*",
     "ajv": "^8.20.0",
     "hono": "^4.12.16",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "oauth4webapi": "^3.3.2"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",

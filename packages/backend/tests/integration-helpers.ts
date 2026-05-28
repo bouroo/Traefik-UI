@@ -204,6 +204,11 @@ export async function setupTestUser(): Promise<void> {
   ]);
   TEST_USER.userId = Number(result.lastInsertRowid || 1);
   TEST_USER.token = generateToken(TEST_USER.userId, TEST_USER.username);
+
+  const superAdminRole = db.query('SELECT id FROM roles WHERE name = ?').get('super_admin') as { id: number } | undefined;
+  if (superAdminRole) {
+    db.run('INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)', [TEST_USER.userId, superAdminRole.id]);
+  }
 }
 
 export function getTestToken(): string {

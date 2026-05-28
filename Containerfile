@@ -19,6 +19,15 @@ COPY packages/backend/src/ packages/backend/src/
 
 RUN bun build packages/backend/src/index.ts --outdir dist --target bun
 
+COPY packages/frontend/tsconfig.json packages/frontend/
+COPY packages/frontend/src/ packages/frontend/src/
+COPY packages/frontend/tailwind.config.js packages/frontend/
+COPY packages/frontend/index.html packages/frontend/
+
+WORKDIR /app/packages/frontend
+RUN bun run build
+WORKDIR /app
+
 # ---- Production Stage ----
 FROM oven/bun:1-slim AS production
 WORKDIR /app
@@ -30,7 +39,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./
 
-COPY --from=build /app/packages/frontend/src/ ./public/
+COPY --from=build /app/packages/frontend/dist ./public/
 
 RUN mkdir -p /app/data && chown -R traefikui:traefikui /app
 

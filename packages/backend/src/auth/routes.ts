@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { config } from '../config';
 import { getDb } from '../db';
 import { authMiddleware, generateToken } from './middleware';
+import { getUserPermissions } from './rbac';
 
 const auth = new Hono();
 
@@ -22,6 +23,9 @@ interface User {
   is_admin: number;
   created_at: string;
   last_login: string | null;
+  source: string;
+  email: string | null;
+  is_active: number;
 }
 
 // POST /api/auth/login
@@ -78,14 +82,19 @@ auth.get('/me', authMiddleware, async (c) => {
   const userId = c.get('userId');
   const db = getDb();
   const user = db
-    .query('SELECT id, username, is_admin, created_at FROM users WHERE id = ?')
+    .query('SELECT id, username, is_admin, source, email, is_active, created_at FROM users WHERE id = ?')
     .get(userId) as Omit<User, 'password_hash' | 'last_login'> | undefined;
 
   if (!user) {
     return c.json({ error: 'User not found' }, 404);
   }
 
-  return c.json({ user });
+  const permissions = getUserPermissions(userId);
+
+  return c.json({
+    user: { id: user.id, username: user.username, is_admin: user.is_admin, source: user.source, email: user.email, is_active: user.is_active, created_at: user.created_at },
+    permissions,
+  });
 });
 
 // POST /api/auth/change-password

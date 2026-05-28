@@ -25,6 +25,7 @@ export const config = {
 
   auth: {
     jwtSecret: Bun.env.JWT_SECRET || 'change-me-in-production-please',
+    encryptionKey: Bun.env.ENCRYPTION_KEY || Bun.env.JWT_SECRET || 'change-me-in-production-please',
     jwtExpiresIn: '24h',
     argon2: {
       timeCost: 3, // iterations (higher = slower, more resistant to brute force)

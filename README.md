@@ -28,7 +28,7 @@ A full-featured web UI for managing your Traefik reverse proxy. Monitor routers,
 | Backend   | Hono.js + Bun                           |
 | Database  | SQLite via `bun:sqlite`                 |
 | Auth      | JWT + argon2id                          |
-| Frontend  | Vanilla JS + Tailwind CSS + Remix Icons |
+| Frontend  | React 18 + Vite + Tailwind CSS + shadcn/ui |
 | Shared    | TypeScript type definitions             |
 | Container | Podman/Docker                           |
 
@@ -44,7 +44,7 @@ Registry (data) → Generic client (fetch) → Generic routes (/api) → Page mo
 
 **Adding a new protocol** (e.g., gRPC) requires only adding one entry to the registry — no other code changes needed.
 
-**On the frontend**, all page modules self-register via `registerPage()` in a data-driven router. Shared utilities (`utils.js`) and reusable UI components (`components.js`) are defined once and used everywhere.
+**On the frontend**, React Router handles client-side routing, TanStack Query manages server state, Zustand manages client state, and shadcn/ui provides base components.
 
 ## Quick Start
 
@@ -220,7 +220,7 @@ bun run format
 bun run build
 ```
 
-The dev server runs with `--watch` mode for auto-reload on changes. The test suite uses Bun's built-in test runner with an in-memory SQLite database.
+The dev server runs with `--watch` mode for auto-reload on changes. The backend test suite uses Bun's built-in test runner with an in-memory SQLite database. The frontend uses Vitest + React Testing Library for unit tests and Playwright for E2E.
 
 ## Project Structure
 
@@ -238,13 +238,15 @@ Traefik-UI/
 │   │   │   ├── db/             # SQLite schema + connection
 │   │   │   └── lib/            # Logger
 │   │   └── tests/              # Integration and unit tests
-│   ├── frontend/               # @traefik-ui/frontend — SPA client
+│   ├── frontend/                 # @traefik-ui/frontend — React SPA client
 │   │   └── src/
-│   │       ├── index.html
-│   │       ├── login.html
-│   │       └── assets/
-│   │           ├── js/         # Page modules + utilities
-│   │           └── css/        # Styles
+│   │       ├── main.tsx          # React entry point
+│   │       ├── app.tsx           # React Router routes
+│   │       ├── components/       # UI components + shadcn primitives
+│   │       ├── routes/           # Page-level route components
+│   │       ├── stores/           # Zustand stores (auth, ui)
+│   │       ├── lib/              # API client, query client, utils
+│   │       └── providers/        # Context providers (auth)
 │   └── shared/                 # @traefik-ui/shared — shared types
 │       └── src/types/
 │           └── traefik.ts      # Traefik API type definitions

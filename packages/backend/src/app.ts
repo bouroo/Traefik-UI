@@ -8,6 +8,12 @@ import { config } from './config';
 import { logError } from './lib/logger';
 
 import { auth } from './auth/routes';
+import { sso } from './auth/sso-routes';
+import { ssoProviders } from './api/admin/sso-providers';
+import { users } from './api/admin/users';
+import { groups } from './api/admin/groups';
+import { roles } from './api/admin/roles';
+import { permissions } from './api/admin/permissions';
 import { dashboard } from './api/dashboard';
 import { overview } from './api/overview';
 import { resources } from './api/resources';
@@ -18,9 +24,9 @@ import { system } from './api/system';
 import { configfile } from './api/configfile';
 import { configCrud } from './api/config-crud';
 
-const frontendDir = existsSync(resolve('./public'))
-  ? './public'
-  : resolve(import.meta.dir, '../../frontend/src');
+const frontendDir = existsSync(resolve(import.meta.dir, '../../frontend/dist'))
+  ? resolve(import.meta.dir, '../../frontend/dist')
+  : './public';
 
 const app = new Hono();
 
@@ -40,6 +46,12 @@ if (config.logLevel !== 'silent') {
 }
 
 app.route('/api/auth', auth);
+app.route('/api/auth/sso', sso);
+app.route('/api/admin/sso-providers', ssoProviders);
+app.route('/api/admin/users', users);
+app.route('/api/admin/groups', groups);
+app.route('/api/admin/roles', roles);
+app.route('/api/admin/permissions', permissions);
 app.route('/api/dashboard', dashboard);
 app.route('/api/overview', overview);
 app.route('/api/tls', tls);
