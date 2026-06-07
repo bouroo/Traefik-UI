@@ -161,13 +161,23 @@ export default function IdpPage() {
   };
 
   const handleSave = () => {
+    let roleMappings: Record<string, string> = {};
+    if (form.roleMappings) {
+      try {
+        roleMappings = JSON.parse(form.roleMappings);
+      } catch {
+        toast.error('Invalid JSON in Role Mappings');
+        return;
+      }
+    }
+
     const config = {
       issuerUrl: form.issuerUrl,
       clientId: form.clientId,
       clientSecret: form.clientSecret,
       scopes: form.scopes.split(',').map((s) => s.trim()),
       groupClaim: form.groupClaim,
-      roleMappings: form.roleMappings ? JSON.parse(form.roleMappings) : {},
+      roleMappings,
     };
 
     if (createOpen) {

@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import * as oauth from 'oauth4webapi';
 import { getDb } from '../db';
@@ -8,13 +8,16 @@ import { logError } from '../lib/logger';
 
 const sso = new Hono();
 
-function getSecureFlag(url: string): boolean {
-  return url.startsWith('https://');
+function getSecureFlag(c: Context): boolean {
+  const proto = c.req.header('x-forwarded-proto') || new URL(c.req.url).protocol.replace(':', '');
+  return proto === 'https';
 }
 
-async function getCallbackUri(urlStr: string): Promise<string> {
-  const url = new URL(urlStr);
-  return `${url.origin}/api/auth/sso/callback`;
+function getCallbackUri(c: Context): string {
+  const url = new URL(c.req.url);
+  const proto = c.req.header('x-forwarded-proto') || url.protocol.replace(':', '');
+  const host = c.req.header('x-forwarded-host') || c.req.header('host') || url.host;
+  return `${proto}://${host}/api/auth/sso/callback`;
 }
 
 sso.get('/providers', async (c) => {
@@ -48,8 +51,7 @@ sso.get('/:id/initiate', async (c) => {
     return c.json({ error: 'Failed to connect to identity provider' }, 502);
   }
 
-  const reqUrl = c.req.url;
-  const redirectUri = await getCallbackUri(reqUrl);
+  const redirectUri = getCallbackUri(c);
   const codeVerifier = oauth.generateRandomCodeVerifier();
   const codeChallenge = await oauth.calculatePKCECodeChallenge(codeVerifier);
   const state = oauth.generateRandomState();
@@ -57,7 +59,7 @@ sso.get('/:id/initiate', async (c) => {
 
   const authUrl = buildAuthorizeUrl(as, idp.config, redirectUri, state, codeChallenge, nonce);
 
-  const secure = getSecureFlag(reqUrl);
+  const secure = getSecureFlag(c);
   const cookieOptions = {
     path: '/api/auth/sso',
     maxAge: 600,
@@ -114,7 +116,7 @@ sso.get('/callback', async (c) => {
     return c.json({ error: 'SSO authentication failed' }, 500);
   }
 
-  const redirectUri = await getCallbackUri(c.req.url);
+  const redirectUri = getCallbackUri(c);
 
   let exchangeResult: { idToken: string; accessToken?: string; claims: Record<string, unknown> };
   try {

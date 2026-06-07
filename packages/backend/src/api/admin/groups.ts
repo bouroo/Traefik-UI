@@ -155,10 +155,13 @@ groups.put('/:id', requirePermission('system.users.write'), async (c) => {
   }
 
   if (body.role_ids !== undefined) {
-    db.run('DELETE FROM group_roles WHERE group_id = ?', [id]);
-    for (const roleId of body.role_ids) {
-      db.run('INSERT OR IGNORE INTO group_roles (group_id, role_id) VALUES (?, ?)', [id, roleId]);
-    }
+    const roleIds = body.role_ids;
+    db.transaction(() => {
+      db.run('DELETE FROM group_roles WHERE group_id = ?', [id]);
+      for (const roleId of roleIds) {
+        db.run('INSERT OR IGNORE INTO group_roles (group_id, role_id) VALUES (?, ?)', [id, roleId]);
+      }
+    })();
   }
 
   logAudit(c, 'group.update', 'group', String(id));

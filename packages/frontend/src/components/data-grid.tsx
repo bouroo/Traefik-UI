@@ -41,6 +41,7 @@ export function DataGrid<T>({
     return [...data].sort((a, b) => {
       const aVal = (a as Record<string, unknown>)[sortKey];
       const bVal = (b as Record<string, unknown>)[sortKey];
+      if (aVal == null && bVal == null) return 0;
       if (aVal == null) return 1;
       if (bVal == null) return -1;
       if (typeof aVal === 'string' && typeof bVal === 'string') {

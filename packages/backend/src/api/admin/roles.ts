@@ -174,13 +174,16 @@ roles.put('/:id', requirePermission('system.roles.write'), async (c) => {
   }
 
   if (body.permission_ids !== undefined) {
-    db.run('DELETE FROM role_permissions WHERE role_id = ?', [id]);
-    for (const permId of body.permission_ids) {
-      db.run('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)', [
-        id,
-        permId,
-      ]);
-    }
+    const permissionIds = body.permission_ids;
+    db.transaction(() => {
+      db.run('DELETE FROM role_permissions WHERE role_id = ?', [id]);
+      for (const permId of permissionIds) {
+        db.run('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)', [
+          id,
+          permId,
+        ]);
+      }
+    })();
   }
 
   logAudit(c, 'role.update', 'role', String(id));

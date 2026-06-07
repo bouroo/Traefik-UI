@@ -129,6 +129,16 @@ users.put('/:id', requirePermission('system.users.write'), async (c) => {
   }
 
   if (body.is_active !== undefined) {
+    if (body.is_active === false && existing.source === 'local' && existing.is_admin === 1) {
+      const adminCount = db
+        .query(
+          "SELECT COUNT(*) as count FROM users WHERE source = 'local' AND is_admin = 1 AND is_active = 1"
+        )
+        .get() as { count: number };
+      if (adminCount.count <= 1) {
+        return c.json({ error: 'Cannot deactivate the last active local admin' }, 400);
+      }
+    }
     db.run('UPDATE users SET is_active = ?, updated_at = datetime("now") WHERE id = ?', [
       body.is_active ? 1 : 0,
       id,
@@ -143,10 +153,13 @@ users.put('/:id', requirePermission('system.users.write'), async (c) => {
   }
 
   if (body.roles !== undefined) {
-    db.run('DELETE FROM user_roles WHERE user_id = ?', [id]);
-    for (const roleId of body.roles) {
-      db.run('INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)', [id, roleId]);
-    }
+    const roles = body.roles;
+    db.transaction(() => {
+      db.run('DELETE FROM user_roles WHERE user_id = ?', [id]);
+      for (const roleId of roles) {
+        db.run('INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)', [id, roleId]);
+      }
+    })();
   }
 
   logAudit(c, 'user.update', 'user', String(id));
