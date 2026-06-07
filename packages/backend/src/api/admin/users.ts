@@ -129,7 +129,12 @@ users.put('/:id', requirePermission('system.users.write'), async (c) => {
   }
 
   if (body.is_active !== undefined) {
-    if (body.is_active === false && existing.source === 'local' && existing.is_admin === 1) {
+    if (
+      body.is_active === false &&
+      existing.is_active === 1 &&
+      existing.source === 'local' &&
+      existing.is_admin === 1
+    ) {
       const adminCount = db
         .query(
           "SELECT COUNT(*) as count FROM users WHERE source = 'local' AND is_admin = 1 AND is_active = 1"

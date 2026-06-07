@@ -21,8 +21,8 @@ export async function encryptSecret(plaintext: string): Promise<string> {
     key,
     ENCODER.encode(plaintext)
   );
-  const ivB64 = btoa(String.fromCharCode(...iv));
-  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(ciphertext)));
+  const ivB64 = Buffer.from(iv).toString('base64');
+  const ctB64 = Buffer.from(new Uint8Array(ciphertext)).toString('base64');
   return `${ivB64}:${ctB64}`;
 }
 
@@ -30,8 +30,8 @@ export async function decryptSecret(ciphertext: string): Promise<string> {
   const [ivB64, ctB64] = ciphertext.split(':');
   if (!ivB64 || !ctB64) throw new Error('Invalid encrypted secret format');
   const key = await getKey();
-  const iv = Uint8Array.from(atob(ivB64), (c) => c.charCodeAt(0));
-  const data = Uint8Array.from(atob(ctB64), (c) => c.charCodeAt(0));
+  const iv = Buffer.from(ivB64, 'base64');
+  const data = Buffer.from(ctB64, 'base64');
   const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
   return new TextDecoder().decode(plaintext);
 }

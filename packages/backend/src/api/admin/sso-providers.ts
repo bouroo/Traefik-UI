@@ -31,7 +31,7 @@ ssoProviders.get('/:id', requirePermission('system.idp.read'), async (c) => {
   if (isNaN(id)) {
     return c.json({ error: 'Invalid ID' }, 400);
   }
-  const idp = getIdPById(id);
+  const idp = getIdPById(id, true);
   if (!idp) {
     return c.json({ error: 'Identity provider not found' }, 404);
   }

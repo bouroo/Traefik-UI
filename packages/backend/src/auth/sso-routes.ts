@@ -161,6 +161,36 @@ sso.get('/callback', async (c) => {
     return c.json({ error: 'SSO authentication failed' }, 403);
   }
 
+  // Apply OIDC role mappings if configured
+  if (idp.config.groupClaim && idp.config.roleMappings) {
+    const groups = claims[idp.config.groupClaim];
+    if (Array.isArray(groups)) {
+      const mappedRoleNames = groups
+        .map((g: unknown) => idp.config.roleMappings?.[String(g)])
+        .filter((r: string | undefined): r is string => r !== undefined);
+
+      if (mappedRoleNames.length > 0) {
+        const roleRows = db
+          .query(
+            'SELECT id FROM roles WHERE name IN (' + mappedRoleNames.map(() => '?').join(',') + ')'
+          )
+          .all(...mappedRoleNames) as { id: number }[];
+
+        if (roleRows.length > 0) {
+          db.transaction(() => {
+            db.run('DELETE FROM user_roles WHERE user_id = ?', [user.id]);
+            for (const role of roleRows) {
+              db.run('INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)', [
+                user.id,
+                role.id,
+              ]);
+            }
+          })();
+        }
+      }
+    }
+  }
+
   const token = generateToken(user.id, user.username);
 
   deleteCookie(c, 'sso_state');
@@ -168,10 +198,12 @@ sso.get('/callback', async (c) => {
   deleteCookie(c, 'sso_verifier');
   deleteCookie(c, 'sso_provider_id');
 
-  const userJson = JSON.stringify({ id: user.id, username: user.username });
+  const safeUserJson = JSON.stringify({ id: user.id, username: user.username })
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e');
   const html = `<!DOCTYPE html><html><body><script>
     localStorage.setItem('traefik_ui_token', '${token}');
-    localStorage.setItem('traefik_ui_user', JSON.stringify(${userJson}));
+    localStorage.setItem('traefik_ui_user', JSON.parse('${safeUserJson}'));
     window.location.href = '/';
   </script></body></html>`;
 

@@ -102,12 +102,12 @@ export function DataGrid<T>({
             {columns.map((col) => (
               <TableHead
                 key={col.key}
-                className={onRowClick ? 'cursor-pointer select-none' : ''}
-                onClick={() => onRowClick && handleSort(col.key)}
+                className="cursor-pointer select-none"
+                onClick={() => handleSort(col.key)}
               >
                 <div className="flex items-center gap-1">
                   {col.header}
-                  {onRowClick && sortKey === col.key && (
+                  {sortKey === col.key && (
                     sortOrder === 'asc' ? (
                       <ChevronUp className="h-3 w-3" />
                     ) : (

@@ -18,13 +18,14 @@ export interface IdPRecord {
   config: IdPConfig;
 }
 
-export function getIdPById(id: number): IdPRecord | null {
+export function getIdPById(id: number, includeDisabled = false): IdPRecord | null {
   const db = getDb();
-  const row = db
-    .query(
-      'SELECT id, name, enabled, config_json FROM identity_providers WHERE id = ? AND enabled = 1'
-    )
-    .get(id) as { id: number; name: string; enabled: number; config_json: string } | undefined;
+  const query = includeDisabled
+    ? 'SELECT id, name, enabled, config_json FROM identity_providers WHERE id = ?'
+    : 'SELECT id, name, enabled, config_json FROM identity_providers WHERE id = ? AND enabled = 1';
+  const row = db.query(query).get(id) as
+    | { id: number; name: string; enabled: number; config_json: string }
+    | undefined;
   if (!row) return null;
   return {
     id: row.id,
