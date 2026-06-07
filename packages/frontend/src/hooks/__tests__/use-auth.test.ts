@@ -30,13 +30,31 @@ describe('useAuth', () => {
 
   describe('isAdmin', () => {
     it('returns true when user is admin', () => {
-      useAuthStore.setState({ user: { id: 1, username: 'admin', source: 'local', email: null, is_active: true, isAdmin: true } });
+      useAuthStore.setState({
+        user: {
+          id: 1,
+          username: 'admin',
+          source: 'local',
+          email: null,
+          is_active: true,
+          isAdmin: true,
+        },
+      });
       const { result } = renderHook(() => useAuth());
       expect(result.current.isAdmin).toBe(true);
     });
 
     it('returns false when user is not admin', () => {
-      useAuthStore.setState({ user: { id: 2, username: 'user', source: 'local', email: null, is_active: true, isAdmin: false } });
+      useAuthStore.setState({
+        user: {
+          id: 2,
+          username: 'user',
+          source: 'local',
+          email: null,
+          is_active: true,
+          isAdmin: false,
+        },
+      });
       const { result } = renderHook(() => useAuth());
       expect(result.current.isAdmin).toBe(false);
     });

@@ -61,7 +61,10 @@ test.describe('Admin — Roles', () => {
 
     await expect(page.getByRole('cell', { name: 'deletable-role' }).first()).toBeVisible();
 
-    const deleteButton = page.locator('tr', { hasText: 'deletable-role' }).getByRole('button').last();
+    const deleteButton = page
+      .locator('tr', { hasText: 'deletable-role' })
+      .getByRole('button')
+      .last();
     await deleteButton.click();
 
     await expect(page.getByRole('dialog')).toBeVisible();

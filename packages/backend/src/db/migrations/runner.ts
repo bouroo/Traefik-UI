@@ -22,9 +22,7 @@ export function runMigrations(db: Database): void {
     .sort();
 
   for (const file of migrationFiles) {
-    const alreadyApplied = db
-      .query("SELECT 1 FROM migrations WHERE name = ?")
-      .get(file);
+    const alreadyApplied = db.query('SELECT 1 FROM migrations WHERE name = ?').get(file);
 
     if (alreadyApplied) {
       continue;
@@ -35,7 +33,7 @@ export function runMigrations(db: Database): void {
 
     db.transaction(() => {
       db.exec(sql);
-      db.run("INSERT INTO migrations (name) VALUES (?)", [file]);
+      db.run('INSERT INTO migrations (name) VALUES (?)', [file]);
     })();
   }
 }

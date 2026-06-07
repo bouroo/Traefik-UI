@@ -207,7 +207,9 @@ export async function getDynamicConfig(): Promise<unknown> {
   return fetchApi<unknown>('/api/configfile/dynamic');
 }
 
-export async function getSsoProviders(): Promise<{ id: number; name: string; provider_type: string }[]> {
+export async function getSsoProviders(): Promise<
+  { id: number; name: string; provider_type: string }[]
+> {
   return fetchApi<{ id: number; name: string; provider_type: string }[]>('/api/auth/sso/providers');
 }
 
@@ -248,11 +250,26 @@ export async function getGroups(): Promise<Group[]> {
   return fetchApi<Group[]>('/api/admin/groups');
 }
 
-export async function getGroup(id: number): Promise<Group & { users: { id: number; username: string; email: string | null }[]; roles: { id: number; name: string }[] }> {
-  return fetchApi<Group & { users: { id: number; username: string; email: string | null }[]; roles: { id: number; name: string }[] }>(`/api/admin/groups/${id}`);
+export async function getGroup(id: number): Promise<
+  Group & {
+    users: { id: number; username: string; email: string | null }[];
+    roles: { id: number; name: string }[];
+  }
+> {
+  return fetchApi<
+    Group & {
+      users: { id: number; username: string; email: string | null }[];
+      roles: { id: number; name: string }[];
+    }
+  >(`/api/admin/groups/${id}`);
 }
 
-export async function createGroup(data: { name: string; external_id?: string; source?: string; role_ids?: number[] }): Promise<{ id: number; name: string }> {
+export async function createGroup(data: {
+  name: string;
+  external_id?: string;
+  source?: string;
+  role_ids?: number[];
+}): Promise<{ id: number; name: string }> {
   return fetchApi<{ id: number; name: string }>('/api/admin/groups', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -291,7 +308,11 @@ export async function getRole(id: number): Promise<Role> {
   return fetchApi<Role>(`/api/admin/roles/${id}`);
 }
 
-export async function createRole(data: { name: string; description?: string; permission_ids: number[] }): Promise<{ id: number; name: string }> {
+export async function createRole(data: {
+  name: string;
+  description?: string;
+  permission_ids: number[];
+}): Promise<{ id: number; name: string }> {
   return fetchApi<{ id: number; name: string }>('/api/admin/roles', {
     method: 'POST',
     body: JSON.stringify(data),

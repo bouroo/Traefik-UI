@@ -11,7 +11,9 @@ test.describe('Admin — Identity Providers', () => {
     await page.goto('/admin/idp');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByRole('heading', { name: 'Identity Providers', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Identity Providers', exact: true })
+    ).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Okta' }).first()).toBeVisible();
   });
 
@@ -25,7 +27,9 @@ test.describe('Admin — Identity Providers', () => {
     await expect(page.getByText('Create Identity Provider')).toBeVisible();
 
     await page.locator('input[placeholder="My Identity Provider"]').fill('Azure AD');
-    await page.locator('input[placeholder="https://idp.example.com"]').fill('https://login.microsoftonline.com/common');
+    await page
+      .locator('input[placeholder="https://idp.example.com"]')
+      .fill('https://login.microsoftonline.com/common');
     await page.locator('input[placeholder="client-id-from-idp"]').fill('azure-client-id');
     await page.locator('input[type="password"]').first().fill('azure-secret');
 

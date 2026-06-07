@@ -20,11 +20,18 @@ export interface IdPRecord {
 
 export function getIdPById(id: number): IdPRecord | null {
   const db = getDb();
-  const row = db.query('SELECT id, name, enabled, config_json FROM identity_providers WHERE id = ? AND enabled = 1').get(id) as
-    | { id: number; name: string; enabled: number; config_json: string }
-    | undefined;
+  const row = db
+    .query(
+      'SELECT id, name, enabled, config_json FROM identity_providers WHERE id = ? AND enabled = 1'
+    )
+    .get(id) as { id: number; name: string; enabled: number; config_json: string } | undefined;
   if (!row) return null;
-  return { id: row.id, name: row.name, enabled: row.enabled === 1, config: JSON.parse(row.config_json) as IdPConfig };
+  return {
+    id: row.id,
+    name: row.name,
+    enabled: row.enabled === 1,
+    config: JSON.parse(row.config_json) as IdPConfig,
+  };
 }
 
 export async function discoverIssuer(issuerUrl: string): Promise<oauth.AuthorizationServer> {
@@ -70,10 +77,24 @@ export async function exchangeCode(
   const clientAuthentication = oauth.ClientSecretBasic(clientSecret);
   const callbackParameters = new URLSearchParams();
   callbackParameters.set('code', code);
-  const response = await oauth.authorizationCodeGrantRequest(as, client, clientAuthentication, callbackParameters, redirectUri, codeVerifier);
-  const result = await oauth.processAuthorizationCodeResponse(as, client, response, { expectedNonce: nonce, requireIdToken: true });
+  const response = await oauth.authorizationCodeGrantRequest(
+    as,
+    client,
+    clientAuthentication,
+    callbackParameters,
+    redirectUri,
+    codeVerifier
+  );
+  const result = await oauth.processAuthorizationCodeResponse(as, client, response, {
+    expectedNonce: nonce,
+    requireIdToken: true,
+  });
   if (!result.id_token) throw new Error('ID token missing from authorization response');
   const claims = oauth.getValidatedIdTokenClaims(result);
   if (!claims) throw new Error('ID token validation failed');
-  return { idToken: result.id_token, accessToken: result.access_token, claims: claims as Record<string, unknown> };
+  return {
+    idToken: result.id_token,
+    accessToken: result.access_token,
+    claims: claims as Record<string, unknown>,
+  };
 }

@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+set -e
+
+color() { printf "\033[%sm%s\033[0m\n" "$1" "$2"; }
+
+color "36" "==> pre-commit: running format:check"
+bun run format:check
+
+color "36" "==> pre-commit: running lint"
+bun run lint
+
+color "36" "==> pre-commit: running typecheck"
+bun run typecheck
+
+color "32" "==> pre-commit: all checks passed"

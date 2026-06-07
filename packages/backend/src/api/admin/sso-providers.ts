@@ -11,9 +11,11 @@ ssoProviders.use('/*', authMiddleware);
 
 ssoProviders.get('/', requirePermission('system.idp.read'), async (c) => {
   const db = getDb();
-  const rows = db.query(
-    'SELECT id, name, provider_type, enabled, created_at, updated_at FROM identity_providers ORDER BY id'
-  ).all() as {
+  const rows = db
+    .query(
+      'SELECT id, name, provider_type, enabled, created_at, updated_at FROM identity_providers ORDER BY id'
+    )
+    .all() as {
     id: number;
     name: string;
     provider_type: string;
@@ -34,7 +36,13 @@ ssoProviders.get('/:id', requirePermission('system.idp.read'), async (c) => {
     return c.json({ error: 'Identity provider not found' }, 404);
   }
   const { clientSecretEncrypted: _clientSecretEncrypted, ...configWithoutSecret } = idp.config;
-  return c.json({ id: idp.id, name: idp.name, provider_type: 'oidc', enabled: idp.enabled, config: configWithoutSecret });
+  return c.json({
+    id: idp.id,
+    name: idp.name,
+    provider_type: 'oidc',
+    enabled: idp.enabled,
+    config: configWithoutSecret,
+  });
 });
 
 ssoProviders.post('/', requirePermission('system.idp.write'), async (c) => {
@@ -69,7 +77,10 @@ ssoProviders.post('/', requirePermission('system.idp.write'), async (c) => {
   }
 
   if (!configBody.issuerUrl || !configBody.clientId || !configBody.clientSecret) {
-    return c.json({ error: 'Missing required config fields: issuerUrl, clientId, clientSecret' }, 400);
+    return c.json(
+      { error: 'Missing required config fields: issuerUrl, clientId, clientSecret' },
+      400
+    );
   }
 
   const encryptedSecret = await encryptSecret(configBody.clientSecret);
@@ -99,12 +110,14 @@ ssoProviders.put('/:id', requirePermission('system.idp.write'), async (c) => {
   }
 
   const db = getDb();
-  const existing = db.query('SELECT * FROM identity_providers WHERE id = ?').get(id) as {
-    id: number;
-    name: string;
-    enabled: number;
-    config_json: string;
-  } | undefined;
+  const existing = db.query('SELECT * FROM identity_providers WHERE id = ?').get(id) as
+    | {
+        id: number;
+        name: string;
+        enabled: number;
+        config_json: string;
+      }
+    | undefined;
 
   if (!existing) {
     return c.json({ error: 'Identity provider not found' }, 404);

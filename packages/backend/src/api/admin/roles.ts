@@ -12,7 +12,9 @@ roles.use('/*', authMiddleware);
 
 roles.get('/', requirePermission('system.roles.read'), async (c) => {
   const db = getDb();
-  const rows = db.query(`
+  const rows = db
+    .query(
+      `
     SELECT r.id, r.name, r.description, r.created_at,
            json_group_array(p.name) as permission_names
     FROM roles r
@@ -20,7 +22,9 @@ roles.get('/', requirePermission('system.roles.read'), async (c) => {
     LEFT JOIN permissions p ON p.id = rp.permission_id
     GROUP BY r.id
     ORDER BY r.id
-  `).all() as {
+  `
+    )
+    .all() as {
     id: number;
     name: string;
     description: string | null;
@@ -46,7 +50,9 @@ roles.get('/:id', requirePermission('system.roles.read'), async (c) => {
   }
 
   const db = getDb();
-  const row = db.query(`
+  const row = db
+    .query(
+      `
     SELECT r.id, r.name, r.description, r.created_at,
            json_group_array(p.name) as permission_names
     FROM roles r
@@ -54,13 +60,17 @@ roles.get('/:id', requirePermission('system.roles.read'), async (c) => {
     LEFT JOIN permissions p ON p.id = rp.permission_id
     WHERE r.id = ?
     GROUP BY r.id
-  `).get(id) as {
-    id: number;
-    name: string;
-    description: string | null;
-    created_at: string;
-    permission_names: string;
-  } | undefined;
+  `
+    )
+    .get(id) as
+    | {
+        id: number;
+        name: string;
+        description: string | null;
+        created_at: string;
+        permission_names: string;
+      }
+    | undefined;
 
   if (!row) {
     return c.json({ error: 'Role not found' }, 404);
@@ -102,14 +112,17 @@ roles.post('/', requirePermission('system.roles.write'), async (c) => {
     return c.json({ error: 'Role with this name already exists' }, 400);
   }
 
-  const result = db.run(
-    'INSERT INTO roles (name, description) VALUES (?, ?)',
-    [body.name, body.description ?? null]
-  );
+  const result = db.run('INSERT INTO roles (name, description) VALUES (?, ?)', [
+    body.name,
+    body.description ?? null,
+  ]);
   const roleId = Number(result.lastInsertRowid);
 
   for (const permId of body.permission_ids) {
-    db.run('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)', [roleId, permId]);
+    db.run('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)', [
+      roleId,
+      permId,
+    ]);
   }
 
   logAudit(c, 'role.create', 'role', String(roleId));
@@ -123,10 +136,12 @@ roles.put('/:id', requirePermission('system.roles.write'), async (c) => {
   }
 
   const db = getDb();
-  const existing = db.query('SELECT * FROM roles WHERE id = ?').get(id) as {
-    id: number;
-    name: string;
-  } | undefined;
+  const existing = db.query('SELECT * FROM roles WHERE id = ?').get(id) as
+    | {
+        id: number;
+        name: string;
+      }
+    | undefined;
 
   if (!existing) {
     return c.json({ error: 'Role not found' }, 404);
@@ -145,7 +160,9 @@ roles.put('/:id', requirePermission('system.roles.write'), async (c) => {
   }
 
   if (body.name !== undefined) {
-    const nameConflict = db.query('SELECT id FROM roles WHERE name = ? AND id != ?').get(body.name, id);
+    const nameConflict = db
+      .query('SELECT id FROM roles WHERE name = ? AND id != ?')
+      .get(body.name, id);
     if (nameConflict) {
       return c.json({ error: 'Role with this name already exists' }, 400);
     }
@@ -159,7 +176,10 @@ roles.put('/:id', requirePermission('system.roles.write'), async (c) => {
   if (body.permission_ids !== undefined) {
     db.run('DELETE FROM role_permissions WHERE role_id = ?', [id]);
     for (const permId of body.permission_ids) {
-      db.run('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)', [id, permId]);
+      db.run('INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)', [
+        id,
+        permId,
+      ]);
     }
   }
 
@@ -174,10 +194,12 @@ roles.delete('/:id', requirePermission('system.roles.write'), async (c) => {
   }
 
   const db = getDb();
-  const existing = db.query('SELECT * FROM roles WHERE id = ?').get(id) as {
-    id: number;
-    name: string;
-  } | undefined;
+  const existing = db.query('SELECT * FROM roles WHERE id = ?').get(id) as
+    | {
+        id: number;
+        name: string;
+      }
+    | undefined;
 
   if (!existing) {
     return c.json({ error: 'Role not found' }, 404);

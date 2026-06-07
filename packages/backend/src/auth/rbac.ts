@@ -3,7 +3,9 @@ import { getDb } from '../db';
 
 export function getUserPermissions(userId: number): string[] {
   const db = getDb();
-  const rows = db.query(`
+  const rows = db
+    .query(
+      `
     SELECT DISTINCT p.name
     FROM permissions p
     JOIN role_permissions rp ON rp.permission_id = p.id
@@ -14,7 +16,9 @@ export function getUserPermissions(userId: number): string[] {
       JOIN group_roles gr ON gr.group_id = ug.group_id
       WHERE ug.user_id = ?
     )
-  `).all(userId, userId) as { name: string }[];
+  `
+    )
+    .all(userId, userId) as { name: string }[];
 
   return rows.map((r) => r.name);
 }

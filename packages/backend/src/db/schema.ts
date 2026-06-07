@@ -52,19 +52,21 @@ export async function initDb(db: Database): Promise<void> {
   db.run(`CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash)`);
 
   // Ensure users table has required columns (for existing DBs upgraded from legacy schema)
-  const userColumns = db.query("SELECT name FROM pragma_table_info('users')").all() as { name: string }[];
-  const userColNames = new Set(userColumns.map(c => c.name));
+  const userColumns = db.query("SELECT name FROM pragma_table_info('users')").all() as {
+    name: string;
+  }[];
+  const userColNames = new Set(userColumns.map((c) => c.name));
   if (!userColNames.has('source')) {
     db.run("ALTER TABLE users ADD COLUMN source TEXT DEFAULT 'local'");
   }
   if (!userColNames.has('subject_id')) {
-    db.run("ALTER TABLE users ADD COLUMN subject_id TEXT");
+    db.run('ALTER TABLE users ADD COLUMN subject_id TEXT');
   }
   if (!userColNames.has('email')) {
-    db.run("ALTER TABLE users ADD COLUMN email TEXT");
+    db.run('ALTER TABLE users ADD COLUMN email TEXT');
   }
   if (!userColNames.has('is_active')) {
-    db.run("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1");
+    db.run('ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1');
   }
 
   // Insert default admin user if users table is empty

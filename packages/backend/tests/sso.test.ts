@@ -29,7 +29,17 @@ describe('GET /api/auth/sso/providers', () => {
     const db = getDb();
     db.run(
       'INSERT INTO identity_providers (name, provider_type, enabled, config_json) VALUES (?, ?, ?, ?)',
-      ['test-idp', 'oidc', 1, JSON.stringify({ issuerUrl: 'https://example.com', clientId: 'test', clientSecretEncrypted: '', scopes: ['openid'] })]
+      [
+        'test-idp',
+        'oidc',
+        1,
+        JSON.stringify({
+          issuerUrl: 'https://example.com',
+          clientId: 'test',
+          clientSecretEncrypted: '',
+          scopes: ['openid'],
+        }),
+      ]
     );
     const req = createRequest('/api/auth/sso/providers');
     const res = await app.request(req);
@@ -68,7 +78,17 @@ describe('SSO Admin API', () => {
       const db = getDb();
       db.run(
         'INSERT INTO identity_providers (name, provider_type, enabled, config_json) VALUES (?, ?, ?, ?)',
-        ['idp1', 'oidc', 1, JSON.stringify({ issuerUrl: 'https://ex.com', clientId: 'c1', clientSecretEncrypted: 'enc', scopes: ['openid'] })]
+        [
+          'idp1',
+          'oidc',
+          1,
+          JSON.stringify({
+            issuerUrl: 'https://ex.com',
+            clientId: 'c1',
+            clientSecretEncrypted: 'enc',
+            scopes: ['openid'],
+          }),
+        ]
       );
       const req = authRequest('/api/admin/sso-providers', superAdminToken);
       const res = await app.request(req);
@@ -138,9 +158,21 @@ describe('SSO Admin API', () => {
       const secret = await encryptSecret('the-secret');
       db.run(
         'INSERT INTO identity_providers (name, provider_type, enabled, config_json) VALUES (?, ?, ?, ?)',
-        ['test-idp', 'oidc', 1, JSON.stringify({ issuerUrl: 'https://auth.example.com', clientId: 'my-client', clientSecretEncrypted: secret, scopes: ['openid'] })]
+        [
+          'test-idp',
+          'oidc',
+          1,
+          JSON.stringify({
+            issuerUrl: 'https://auth.example.com',
+            clientId: 'my-client',
+            clientSecretEncrypted: secret,
+            scopes: ['openid'],
+          }),
+        ]
       );
-      const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('test-idp') as { id: number };
+      const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('test-idp') as {
+        id: number;
+      };
       const req = authRequest(`/api/admin/sso-providers/${row.id}`, superAdminToken);
       const res = await app.request(req);
       expect(res.status).toBe(200);
@@ -161,16 +193,30 @@ describe('SSO Admin API', () => {
       const db = getDb();
       db.run(
         'INSERT INTO identity_providers (name, provider_type, enabled, config_json) VALUES (?, ?, ?, ?)',
-        ['original', 'oidc', 1, JSON.stringify({ issuerUrl: 'https://ex.com', clientId: 'c', clientSecretEncrypted: 'enc', scopes: ['openid'] })]
+        [
+          'original',
+          'oidc',
+          1,
+          JSON.stringify({
+            issuerUrl: 'https://ex.com',
+            clientId: 'c',
+            clientSecretEncrypted: 'enc',
+            scopes: ['openid'],
+          }),
+        ]
       );
-      const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('original') as { id: number };
+      const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('original') as {
+        id: number;
+      };
       const req = authRequest(`/api/admin/sso-providers/${row.id}`, superAdminToken, {
         method: 'PUT',
         body: JSON.stringify({ name: 'updated' }),
       });
       const res = await app.request(req);
       expect(res.status).toBe(200);
-      const updated = db.query('SELECT name FROM identity_providers WHERE id = ?').get(row.id) as { name: string };
+      const updated = db.query('SELECT name FROM identity_providers WHERE id = ?').get(row.id) as {
+        name: string;
+      };
       expect(updated.name).toBe('updated');
     });
 
@@ -179,16 +225,30 @@ describe('SSO Admin API', () => {
       const oldSecret = await encryptSecret('old-secret');
       db.run(
         'INSERT INTO identity_providers (name, provider_type, enabled, config_json) VALUES (?, ?, ?, ?)',
-        ['test', 'oidc', 1, JSON.stringify({ issuerUrl: 'https://ex.com', clientId: 'c', clientSecretEncrypted: oldSecret, scopes: ['openid'] })]
+        [
+          'test',
+          'oidc',
+          1,
+          JSON.stringify({
+            issuerUrl: 'https://ex.com',
+            clientId: 'c',
+            clientSecretEncrypted: oldSecret,
+            scopes: ['openid'],
+          }),
+        ]
       );
-      const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('test') as { id: number };
+      const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('test') as {
+        id: number;
+      };
       const req = authRequest(`/api/admin/sso-providers/${row.id}`, superAdminToken, {
         method: 'PUT',
         body: JSON.stringify({ config: { clientSecret: 'new-secret' } }),
       });
       const res = await app.request(req);
       expect(res.status).toBe(200);
-      const saved = db.query('SELECT config_json FROM identity_providers WHERE id = ?').get(row.id) as { config_json: string };
+      const saved = db
+        .query('SELECT config_json FROM identity_providers WHERE id = ?')
+        .get(row.id) as { config_json: string };
       const config = JSON.parse(saved.config_json);
       expect(config.clientSecretEncrypted).not.toBe(oldSecret);
     });
@@ -199,10 +259,24 @@ describe('SSO Admin API', () => {
       const db = getDb();
       db.run(
         'INSERT INTO identity_providers (name, provider_type, enabled, config_json) VALUES (?, ?, ?, ?)',
-        ['to-delete', 'oidc', 1, JSON.stringify({ issuerUrl: 'https://ex.com', clientId: 'c', clientSecretEncrypted: 'enc', scopes: ['openid'] })]
+        [
+          'to-delete',
+          'oidc',
+          1,
+          JSON.stringify({
+            issuerUrl: 'https://ex.com',
+            clientId: 'c',
+            clientSecretEncrypted: 'enc',
+            scopes: ['openid'],
+          }),
+        ]
       );
-      const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('to-delete') as { id: number };
-      const req = authRequest(`/api/admin/sso-providers/${row.id}`, superAdminToken, { method: 'DELETE' });
+      const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('to-delete') as {
+        id: number;
+      };
+      const req = authRequest(`/api/admin/sso-providers/${row.id}`, superAdminToken, {
+        method: 'DELETE',
+      });
       const res = await app.request(req);
       expect(res.status).toBe(200);
       const deleted = db.query('SELECT id FROM identity_providers WHERE id = ?').get(row.id);
@@ -235,9 +309,21 @@ describe('GET /api/auth/sso/:id/initiate', () => {
     const secret = await encryptSecret('test-secret');
     db.run(
       'INSERT INTO identity_providers (name, provider_type, enabled, config_json) VALUES (?, ?, ?, ?)',
-      ['bad-idp', 'oidc', 1, JSON.stringify({ issuerUrl: 'https://127.0.0.1:99999/invalid', clientId: 'c', clientSecretEncrypted: secret, scopes: ['openid'] })]
+      [
+        'bad-idp',
+        'oidc',
+        1,
+        JSON.stringify({
+          issuerUrl: 'https://127.0.0.1:99999/invalid',
+          clientId: 'c',
+          clientSecretEncrypted: secret,
+          scopes: ['openid'],
+        }),
+      ]
     );
-    const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('bad-idp') as { id: number };
+    const row = db.query('SELECT id FROM identity_providers WHERE name = ?').get('bad-idp') as {
+      id: number;
+    };
     const req = createRequest(`/api/auth/sso/${row.id}/initiate`);
     const res = await app.request(req);
     expect(res.status).toBe(502);

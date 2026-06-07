@@ -2,7 +2,9 @@ import { test, expect } from './fixtures';
 import { mockAuth, mockDashboard, mockRouters } from './fixtures';
 
 test.describe('RBAC', () => {
-  test('routers nav item is hidden when user lacks traefik.routers.read permission', async ({ page }) => {
+  test('routers nav item is hidden when user lacks traefik.routers.read permission', async ({
+    page,
+  }) => {
     await mockAuth(page, {
       permissions: ['traefik.dashboard.read'],
     });
@@ -14,7 +16,9 @@ test.describe('RBAC', () => {
     await expect(routersLink).not.toBeVisible();
   });
 
-  test('accessing /routers directly shows access denied when lacking permission', async ({ page }) => {
+  test('accessing /routers directly shows access denied when lacking permission', async ({
+    page,
+  }) => {
     await mockAuth(page, {
       permissions: ['traefik.dashboard.read'],
     });

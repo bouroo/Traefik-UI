@@ -23,10 +23,13 @@ describe('api', () => {
       const { login } = await import('../api');
       await login('testuser', 'password123');
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/auth/login', expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ username: 'testuser', password: 'password123' }),
-      }));
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/auth/login',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ username: 'testuser', password: 'password123' }),
+        })
+      );
     });
 
     it('returns token and user on success', async () => {

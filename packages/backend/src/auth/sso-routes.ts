@@ -19,7 +19,9 @@ async function getCallbackUri(urlStr: string): Promise<string> {
 
 sso.get('/providers', async (c) => {
   const db = getDb();
-  const rows = db.query('SELECT id, name, provider_type FROM identity_providers WHERE enabled = 1').all() as {
+  const rows = db
+    .query('SELECT id, name, provider_type FROM identity_providers WHERE enabled = 1')
+    .all() as {
     id: number;
     name: string;
     provider_type: string;
@@ -56,7 +58,13 @@ sso.get('/:id/initiate', async (c) => {
   const authUrl = buildAuthorizeUrl(as, idp.config, redirectUri, state, codeChallenge, nonce);
 
   const secure = getSecureFlag(reqUrl);
-  const cookieOptions = { path: '/api/auth/sso', maxAge: 600, httpOnly: true, sameSite: 'Lax' as const, secure };
+  const cookieOptions = {
+    path: '/api/auth/sso',
+    maxAge: 600,
+    httpOnly: true,
+    sameSite: 'Lax' as const,
+    secure,
+  };
 
   setCookie(c, 'sso_state', state, cookieOptions);
   setCookie(c, 'sso_nonce', nonce, cookieOptions);
@@ -110,7 +118,14 @@ sso.get('/callback', async (c) => {
 
   let exchangeResult: { idToken: string; accessToken?: string; claims: Record<string, unknown> };
   try {
-    exchangeResult = await exchangeCode(as, idp.config, redirectUri, code, cookieVerifier, cookieNonce);
+    exchangeResult = await exchangeCode(
+      as,
+      idp.config,
+      redirectUri,
+      code,
+      cookieVerifier,
+      cookieNonce
+    );
   } catch (err) {
     logError('SSO code exchange failed:', err);
     return c.json({ error: 'SSO authentication failed' }, 500);
@@ -123,11 +138,15 @@ sso.get('/callback', async (c) => {
 
   const db = getDb();
 
-  let user = db.query('SELECT * FROM users WHERE source = ? AND subject_id = ?').get('oidc', sub) as {
-    id: number;
-    username: string;
-    is_active: number;
-  } | undefined;
+  let user = db
+    .query('SELECT * FROM users WHERE source = ? AND subject_id = ?')
+    .get('oidc', sub) as
+    | {
+        id: number;
+        username: string;
+        is_active: number;
+      }
+    | undefined;
 
   if (!user) {
     const result = db.run(

@@ -9,11 +9,15 @@ permissions.use('/*', authMiddleware);
 
 permissions.get('/', requirePermission('system.roles.read'), async (c) => {
   const db = getDb();
-  const rows = db.query(`
+  const rows = db
+    .query(
+      `
     SELECT id, name, description, created_at
     FROM permissions
     ORDER BY id
-  `).all() as {
+  `
+    )
+    .all() as {
     id: number;
     name: string;
     description: string | null;
@@ -30,12 +34,16 @@ permissions.get('/:id', requirePermission('system.roles.read'), async (c) => {
   }
 
   const db = getDb();
-  const row = db.query('SELECT id, name, description, created_at FROM permissions WHERE id = ?').get(id) as {
-    id: number;
-    name: string;
-    description: string | null;
-    created_at: string;
-  } | undefined;
+  const row = db
+    .query('SELECT id, name, description, created_at FROM permissions WHERE id = ?')
+    .get(id) as
+    | {
+        id: number;
+        name: string;
+        description: string | null;
+        created_at: string;
+      }
+    | undefined;
 
   if (!row) {
     return c.json({ error: 'Permission not found' }, 404);

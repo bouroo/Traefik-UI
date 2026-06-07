@@ -10,7 +10,9 @@ users.use('/*', authMiddleware);
 
 users.get('/', requirePermission('system.users.read'), async (c) => {
   const db = getDb();
-  const rows = db.query(`
+  const rows = db
+    .query(
+      `
     SELECT u.id, u.username, u.source, u.email, u.is_active, u.is_admin, u.created_at,
            json_group_array(json_object('id', r.id, 'name', r.name)) as roles
     FROM users u
@@ -18,7 +20,9 @@ users.get('/', requirePermission('system.users.read'), async (c) => {
     LEFT JOIN roles r ON r.id = ur.role_id
     GROUP BY u.id
     ORDER BY u.id
-  `).all() as {
+  `
+    )
+    .all() as {
     id: number;
     username: string;
     source: string;
@@ -50,7 +54,9 @@ users.get('/:id', requirePermission('system.users.read'), async (c) => {
   }
 
   const db = getDb();
-  const row = db.query(`
+  const row = db
+    .query(
+      `
     SELECT u.id, u.username, u.source, u.email, u.is_active, u.is_admin, u.created_at,
            json_group_array(json_object('id', r.id, 'name', r.name)) as roles
     FROM users u
@@ -58,16 +64,20 @@ users.get('/:id', requirePermission('system.users.read'), async (c) => {
     LEFT JOIN roles r ON r.id = ur.role_id
     WHERE u.id = ?
     GROUP BY u.id
-  `).get(id) as {
-    id: number;
-    username: string;
-    source: string;
-    email: string | null;
-    is_active: number;
-    is_admin: number;
-    created_at: string;
-    roles: string;
-  } | undefined;
+  `
+    )
+    .get(id) as
+    | {
+        id: number;
+        username: string;
+        source: string;
+        email: string | null;
+        is_active: number;
+        is_admin: number;
+        created_at: string;
+        roles: string;
+      }
+    | undefined;
 
   if (!row) {
     return c.json({ error: 'User not found' }, 404);
@@ -92,13 +102,15 @@ users.put('/:id', requirePermission('system.users.write'), async (c) => {
   }
 
   const db = getDb();
-  const existing = db.query('SELECT * FROM users WHERE id = ?').get(id) as {
-    id: number;
-    username: string;
-    source: string;
-    is_active: number;
-    is_admin: number;
-  } | undefined;
+  const existing = db.query('SELECT * FROM users WHERE id = ?').get(id) as
+    | {
+        id: number;
+        username: string;
+        source: string;
+        is_active: number;
+        is_admin: number;
+      }
+    | undefined;
 
   if (!existing) {
     return c.json({ error: 'User not found' }, 404);
@@ -124,7 +136,10 @@ users.put('/:id', requirePermission('system.users.write'), async (c) => {
   }
 
   if (body.email !== undefined) {
-    db.run('UPDATE users SET email = ?, updated_at = datetime("now") WHERE id = ?', [body.email, id]);
+    db.run('UPDATE users SET email = ?, updated_at = datetime("now") WHERE id = ?', [
+      body.email,
+      id,
+    ]);
   }
 
   if (body.roles !== undefined) {
@@ -146,20 +161,22 @@ users.delete('/:id', requirePermission('system.users.write'), async (c) => {
   }
 
   const db = getDb();
-  const existing = db.query('SELECT * FROM users WHERE id = ?').get(id) as {
-    id: number;
-    source: string;
-    is_admin: number;
-  } | undefined;
+  const existing = db.query('SELECT * FROM users WHERE id = ?').get(id) as
+    | {
+        id: number;
+        source: string;
+        is_admin: number;
+      }
+    | undefined;
 
   if (!existing) {
     return c.json({ error: 'User not found' }, 404);
   }
 
   if (existing.source === 'local' && existing.is_admin === 1) {
-    const adminCount = db.query(
-      "SELECT COUNT(*) as count FROM users WHERE source = 'local' AND is_admin = 1"
-    ).get() as { count: number };
+    const adminCount = db
+      .query("SELECT COUNT(*) as count FROM users WHERE source = 'local' AND is_admin = 1")
+      .get() as { count: number };
     if (adminCount.count <= 1) {
       return c.json({ error: 'Cannot delete the last local admin' }, 400);
     }

@@ -45,6 +45,8 @@ test.describe('Routers', () => {
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.locator('[role="dialog"]').getByText('api-service', { exact: true })).toBeVisible();
+    await expect(
+      page.locator('[role="dialog"]').getByText('api-service', { exact: true })
+    ).toBeVisible();
   });
 });

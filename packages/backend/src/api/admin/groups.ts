@@ -10,14 +10,18 @@ groups.use('/*', authMiddleware);
 
 groups.get('/', requirePermission('system.users.read'), async (c) => {
   const db = getDb();
-  const rows = db.query(`
+  const rows = db
+    .query(
+      `
     SELECT g.id, g.name, g.external_id, g.source, g.created_at,
            COUNT(ug.user_id) as member_count
     FROM groups g
     LEFT JOIN user_groups ug ON ug.group_id = g.id
     GROUP BY g.id
     ORDER BY g.id
-  `).all() as {
+  `
+    )
+    .all() as {
     id: number;
     name: string;
     external_id: string | null;
@@ -36,31 +40,41 @@ groups.get('/:id', requirePermission('system.users.read'), async (c) => {
   }
 
   const db = getDb();
-  const group = db.query('SELECT * FROM groups WHERE id = ?').get(id) as {
-    id: number;
-    name: string;
-    external_id: string | null;
-    source: string;
-    created_at: string;
-  } | undefined;
+  const group = db.query('SELECT * FROM groups WHERE id = ?').get(id) as
+    | {
+        id: number;
+        name: string;
+        external_id: string | null;
+        source: string;
+        created_at: string;
+      }
+    | undefined;
 
   if (!group) {
     return c.json({ error: 'Group not found' }, 404);
   }
 
-  const users = db.query(`
+  const users = db
+    .query(
+      `
     SELECT u.id, u.username, u.email
     FROM users u
     JOIN user_groups ug ON ug.user_id = u.id
     WHERE ug.group_id = ?
-  `).all(id) as { id: number; username: string; email: string | null }[];
+  `
+    )
+    .all(id) as { id: number; username: string; email: string | null }[];
 
-  const roles = db.query(`
+  const roles = db
+    .query(
+      `
     SELECT r.id, r.name
     FROM roles r
     JOIN group_roles gr ON gr.role_id = r.id
     WHERE gr.group_id = ?
-  `).all(id) as { id: number; name: string }[];
+  `
+    )
+    .all(id) as { id: number; name: string }[];
 
   return c.json({
     ...group,
@@ -88,15 +102,19 @@ groups.post('/', requirePermission('system.users.write'), async (c) => {
   }
 
   const db = getDb();
-  const result = db.run(
-    'INSERT INTO groups (name, external_id, source) VALUES (?, ?, ?)',
-    [body.name, body.external_id ?? null, body.source ?? 'local']
-  );
+  const result = db.run('INSERT INTO groups (name, external_id, source) VALUES (?, ?, ?)', [
+    body.name,
+    body.external_id ?? null,
+    body.source ?? 'local',
+  ]);
   const groupId = Number(result.lastInsertRowid);
 
   if (body.role_ids && body.role_ids.length > 0) {
     for (const roleId of body.role_ids) {
-      db.run('INSERT OR IGNORE INTO group_roles (group_id, role_id) VALUES (?, ?)', [groupId, roleId]);
+      db.run('INSERT OR IGNORE INTO group_roles (group_id, role_id) VALUES (?, ?)', [
+        groupId,
+        roleId,
+      ]);
     }
   }
 
