@@ -16,7 +16,7 @@ A full-featured web UI for managing your Traefik reverse proxy. Monitor routers,
 - 📈 **System monitoring** (CPU, memory, uptime)
 - 🔐 **JWT authentication** with argon2id passwords
 - 🔑 **OIDC SSO** — OpenID Connect single sign-on with PKCE flow, auto-provisioning, multiple IdP support
-- 🛡️ **RBAC** — Role-based access control with 20 permissions, 3 built-in roles (super_admin, operator, viewer)
+- 🛡️ **RBAC** — Role-based access control with 19 permissions, 3 built-in roles (super_admin, operator, viewer)
 - 👥 **User management** — Admin CRUD for users, groups, roles, permissions
 - 📝 **Audit logging** — Tracks admin actions (create, update, delete)
 - 📄 **Config file viewer & editor** — Static and dynamic Traefik YAML configs with validation, formatting, and in-place editing
@@ -33,7 +33,7 @@ A full-featured web UI for managing your Traefik reverse proxy. Monitor routers,
 | Backend | Hono.js 4 + Bun |
 | Database | SQLite via `bun:sqlite` |
 | Auth | JWT (24h) + argon2id + OIDC SSO (PKCE) |
-| RBAC | Permission-based (20 permissions, 3 built-in roles) |
+| RBAC | Permission-based (19 permissions, 3 built-in roles) |
 | Frontend | React 18 + Vite 6 + Tailwind CSS 3 + shadcn/ui |
 | State | Zustand 5 + TanStack Query 5 |
 | Charts | Recharts |
@@ -275,31 +275,60 @@ Traefik-UI/
 │   │   │   │   ├── dashboard.ts
 │   │   │   │   ├── overview.ts
 │   │   │   │   ├── resources.ts    # Registry-driven generic resource router
+│   │   │   │   ├── routers.ts      # Legacy router endpoints (HTTP, TCP, UDP)
+│   │   │   │   ├── services.ts     # Legacy service endpoints (HTTP, TCP, UDP)
+│   │   │   │   ├── middlewares.ts  # Legacy middleware endpoints (HTTP, TCP)
 │   │   │   │   ├── tls.ts
 │   │   │   │   ├── logs.ts
+│   │   │   │   ├── logs-parser.ts  # Access log parsing (CLF and JSON formats)
 │   │   │   │   ├── entrypoints.ts
 │   │   │   │   ├── system.ts
 │   │   │   │   ├── configfile.ts   # Config viewer + editor + validator
 │   │   │   │   └── config-crud.ts  # Dynamic config resource CRUD
-│   │   │   ├── auth/           # Auth routes + JWT middleware + OIDC SSO + RBAC
-│   │   │   ├── traefik/        # Traefik API client + protocol/resource registry
-│   │   │   ├── db/             # SQLite schema + migrations
-│   │   │   └── lib/            # Logger, audit, crypto
+│   │   │   ├── auth/
+│   │   │   │   ├── routes.ts        # Login, logout, me, change-password, refresh
+│   │   │   │   ├── sso-routes.ts    # OIDC SSO initiation and callback
+│   │   │   │   ├── middleware.ts    # JWT auth middleware
+│   │   │   │   ├── oidc.ts          # OIDC client logic
+│   │   │   │   └── rbac.ts          # RBAC permission enforcement
+│   │   │   ├── traefik/
+│   │   │   │   ├── client.ts        # Traefik API client
+│   │   │   │   └── registry.ts      # Protocol/resource registry
+│   │   │   ├── db/
+│   │   │   │   ├── schema.ts        # SQLite schema + default admin user
+│   │   │   │   ├── index.ts         # Database initialization
+│   │   │   │   └── migrations/      # SQL migration files + runner
+│   │   │   └── lib/
+│   │   │       ├── logger.ts        # Structured logging
+│   │   │       ├── audit.ts         # Audit logging
+│   │   │       └── crypto.ts        # AES-GCM encryption for IdP secrets
 │   │   └── tests/              # Integration and unit tests
-│   ├── frontend/               # @traefik-ui/frontend — React SPA
+│   │   ├── frontend/               # @traefik-ui/frontend — React SPA
 │   │   └── src/
 │   │       ├── main.tsx        # React entry point
 │   │       ├── app.tsx         # React Router routes
-│   │       ├── components/     # UI components + shadcn/ui primitives
-│   │       ├── routes/         # Page-level route components
+│   │       ├── components/
+│   │       │   ├── ui/         # shadcn/ui primitives (button, card, dialog, etc.)
+│   │       │   ├── app-shell.tsx       # App layout shell
+│   │       │   ├── data-grid.tsx       # Reusable data grid
+│   │       │   └── permission-guard.tsx # RBAC permission guard
+│   │       ├── routes/
+│   │       │   ├── (pages)/    # Feature page components
+│   │       │   └── admin/      # Admin pages (users, groups, roles, idp)
 │   │       ├── stores/         # Zustand stores (auth, ui)
-│   │       ├── hooks/          # Custom React hooks
-│   │       ├── lib/            # API client, query client, utils
+│   │       ├── hooks/
+│   │       │   └── use-auth.ts         # Auth hook
+│   │       ├── lib/
+│   │       │   ├── api.ts              # API client
+│   │       │   ├── query-client.ts     # TanStack Query setup
+│   │       │   └── utils.ts            # Utility functions
 │   │       ├── providers/      # Context providers (auth)
 │   │       └── styles/         # Tailwind CSS
 │   └── shared/                 # @traefik-ui/shared — shared types
-│       └── src/types/
-│           └── traefik.ts      # Traefik API type definitions
+│       └── src/
+│           ├── index.ts        # Package entry point / re-exports
+│           └── types/
+│               └── traefik.ts  # Traefik API type definitions
 ├── turbo.json                  # Turborepo task config
 ├── compose.yml                 # Docker/Podman Compose
 ├── Containerfile               # Multi-stage container build

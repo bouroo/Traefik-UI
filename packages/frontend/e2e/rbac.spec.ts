@@ -7,9 +7,10 @@ test.describe('RBAC', () => {
       permissions: ['traefik.dashboard.read'],
     });
     await mockDashboard(page);
+    await mockRouters(page);
     await page.goto('/');
 
-    const routersLink = page.locator('nav a[href="/routers"]');
+    const routersLink = page.locator('aside a[href="/routers"]');
     await expect(routersLink).not.toBeVisible();
   });
 
