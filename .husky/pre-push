@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+set -e
+
+color() { printf "\033[%sm%s\033[0m\n" "$1" "$2"; }
+
+color "36" "==> pre-push: running tests"
+bun run test
+
+color "36" "==> pre-push: running build"
+bun run build
+
+color "32" "==> pre-push: all checks passed"

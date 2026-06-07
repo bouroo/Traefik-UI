@@ -115,3 +115,11 @@ dist
 # from incoming branch
 data/
 .playwright-mcp/
+
+# Turborepo
+.turbo/
+turbo-build-cache/
+
+# Monorepo packages
+packages/*/node_modules/
+packages/*/dist/

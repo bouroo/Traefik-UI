@@ -1,0 +1,17 @@
+node_modules
+.git
+.github
+.agents
+.playwright-mcp
+data
+*.md
+!packages/*/README.md
+dist
+*.test.ts
+*.spec.ts
+__tests__
+coverage
+.env
+.env.*
+.kilo
+.turbo

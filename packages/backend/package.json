@@ -1,0 +1,27 @@
+{
+  "name": "@traefik-ui/backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint src tests --fix",
+    "test": "bun test",
+    "test:integration": "bun test tests/integration.test.ts"
+  },
+  "dependencies": {
+    "@traefik-ui/shared": "workspace:*",
+    "ajv": "^8.20.0",
+    "hono": "^4.12.16",
+    "jsonwebtoken": "^9.0.3",
+    "oauth4webapi": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "typescript": "^5.9.3"
+  }
+}

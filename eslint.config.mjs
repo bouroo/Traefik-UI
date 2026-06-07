@@ -4,8 +4,8 @@ import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
-  { ignores: ['dist/**', 'node_modules/**', 'src/public/**'] },
-  { files: ['**/*.ts'] },
+  { ignores: ['dist/**', 'node_modules/**', 'packages/*/dist/**', 'packages/*/node_modules/**', 'packages/frontend/src/**'] },
+  { files: ['packages/**/*.ts'] },
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
