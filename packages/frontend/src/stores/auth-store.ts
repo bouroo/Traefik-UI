@@ -39,8 +39,8 @@ async function fetchMe(token: string): Promise<{ user: AuthUser; permissions: st
       username: data.user.username,
       source: data.user.source,
       email: data.user.email,
-      is_active: data.user.is_active === 1 || data.user.is_active === true,
-      isAdmin: data.user.is_admin === 1 || data.user.is_admin === true,
+      is_active: Boolean(data.user.is_active),
+      isAdmin: Boolean(data.user.is_admin),
     },
     permissions: data.permissions || [],
   };

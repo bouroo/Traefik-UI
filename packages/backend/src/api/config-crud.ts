@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { YAML } from 'bun';
 import { config } from '../config';
 import { authMiddleware } from '../auth/middleware';
+import { logError } from '../lib/logger';
 
 class Mutex {
   private promise = Promise.resolve();
@@ -126,7 +127,7 @@ configCrud.post('/:resourceType', async (c) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[config-crud] Error saving ${resourceType}:`, message);
+    logError(`[config-crud] Error saving ${resourceType}:`, message);
     return c.json({ error: message }, 500);
   }
 });
@@ -176,7 +177,7 @@ configCrud.delete('/:resourceType/:protocol/:name', async (c) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[config-crud] Error deleting ${resourceType}:`, message);
+    logError(`[config-crud] Error deleting ${resourceType}:`, message);
     return c.json({ error: message }, 500);
   }
 });

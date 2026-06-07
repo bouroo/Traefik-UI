@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import * as traefik from '../traefik/client';
 import { authMiddleware } from '../auth/middleware';
+import { logError } from '../lib/logger';
 
 const middlewares = new Hono();
 
@@ -18,7 +19,7 @@ middlewares.get('/', async (c) => {
       tcp: tcpMiddlewares,
     });
   } catch (error) {
-    console.error('[middlewares] Error fetching all middlewares:', error);
+    logError('[middlewares] Error fetching all middlewares:', error);
     return c.json({ error: 'Internal server error while fetching middlewares' }, 500);
   }
 });
@@ -28,7 +29,7 @@ middlewares.get('/http', async (c) => {
     const middlewares = await traefik.getHttpMiddlewares();
     return c.json(middlewares);
   } catch (error) {
-    console.error('[middlewares] Error fetching HTTP middlewares:', error);
+    logError('[middlewares] Error fetching HTTP middlewares:', error);
     return c.json({ error: 'Internal server error while fetching HTTP middlewares' }, 500);
   }
 });
@@ -44,7 +45,7 @@ middlewares.get('/http/:name', async (c) => {
 
     return c.json(middleware);
   } catch (error) {
-    console.error('[middlewares] Error fetching HTTP middleware:', error);
+    logError('[middlewares] Error fetching HTTP middleware:', error);
     return c.json({ error: 'Internal server error while fetching HTTP middleware' }, 500);
   }
 });
@@ -54,7 +55,7 @@ middlewares.get('/tcp', async (c) => {
     const middlewares = await traefik.getTcpMiddlewares();
     return c.json(middlewares);
   } catch (error) {
-    console.error('[middlewares] Error fetching TCP middlewares:', error);
+    logError('[middlewares] Error fetching TCP middlewares:', error);
     return c.json({ error: 'Internal server error while fetching TCP middlewares' }, 500);
   }
 });
@@ -70,7 +71,7 @@ middlewares.get('/tcp/:name', async (c) => {
 
     return c.json(middleware);
   } catch (error) {
-    console.error('[middlewares] Error fetching TCP middleware:', error);
+    logError('[middlewares] Error fetching TCP middleware:', error);
     return c.json({ error: 'Internal server error while fetching TCP middleware' }, 500);
   }
 });

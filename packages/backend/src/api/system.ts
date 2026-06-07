@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { authMiddleware } from '../auth/middleware';
 import { config } from '../config';
+import { logError } from '../lib/logger';
 
 const system = new Hono();
 
@@ -97,7 +98,7 @@ system.get('/stats', authMiddleware, async (c) => {
 
     return c.json(stats);
   } catch (error) {
-    console.error(
+    logError(
       '[system] Error fetching system stats:',
       error instanceof Error ? error.message : String(error)
     );
@@ -125,7 +126,7 @@ system.get('/config', authMiddleware, async (c) => {
       },
     });
   } catch (error) {
-    console.error(
+    logError(
       '[system] Error fetching config:',
       error instanceof Error ? error.message : String(error)
     );
@@ -172,7 +173,7 @@ system.get('/acme', authMiddleware, async (c) => {
       note: 'Sensitive key data has been redacted',
     });
   } catch (error) {
-    console.error(
+    logError(
       '[system] Error reading ACME file:',
       error instanceof Error ? error.message : String(error)
     );

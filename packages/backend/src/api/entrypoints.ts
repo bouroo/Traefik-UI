@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import * as traefik from '../traefik/client';
 import { authMiddleware } from '../auth/middleware';
+import { logError } from '../lib/logger';
 
 const entrypoints = new Hono();
 
@@ -13,13 +14,13 @@ entrypoints.get('/', async (c) => {
     const eps = await traefik.getEntryPoints();
 
     if (!eps) {
-      console.error('[entrypoints] Failed to fetch entrypoints: API returned null');
+      logError('[entrypoints] Failed to fetch entrypoints: API returned null');
       return c.json({ error: 'Failed to fetch entrypoints from Traefik API' }, 502);
     }
 
     return c.json({ entrypoints: eps });
   } catch (error) {
-    console.error(
+    logError(
       '[entrypoints] Error fetching entrypoints:',
       error instanceof Error ? error.message : String(error)
     );
@@ -45,7 +46,7 @@ entrypoints.get('/:name', async (c) => {
 
     return c.json({ entrypoint: ep });
   } catch (error) {
-    console.error(
+    logError(
       `[entrypoints] Error fetching entrypoint "${name}":`,
       error instanceof Error ? error.message : String(error)
     );

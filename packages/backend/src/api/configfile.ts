@@ -3,6 +3,7 @@ import { YAML } from 'bun';
 import Ajv, { type ValidateFunction } from 'ajv';
 import { config } from '../config';
 import { authMiddleware } from '../auth/middleware';
+import { logError } from '../lib/logger';
 
 const configfile = new Hono();
 
@@ -42,7 +43,7 @@ configfile.get('/static', async (c) => {
     const parsed = YAML.parse(content);
     return c.json(parsed);
   } catch (error) {
-    console.error(
+    logError(
       '[configfile] Error parsing static config YAML:',
       error instanceof Error ? error.message : String(error)
     );
@@ -92,7 +93,7 @@ configfile.put('/static', async (c) => {
   try {
     await Bun.write(filePath, body);
   } catch (error) {
-    console.error(
+    logError(
       '[configfile] Error writing static config:',
       error instanceof Error ? error.message : String(error)
     );
@@ -134,7 +135,7 @@ configfile.get('/dynamic', async (c) => {
     const parsed = YAML.parse(content);
     return c.json(parsed);
   } catch (error) {
-    console.error(
+    logError(
       '[configfile] Error parsing dynamic config YAML:',
       error instanceof Error ? error.message : String(error)
     );
@@ -184,7 +185,7 @@ configfile.put('/dynamic', async (c) => {
   try {
     await Bun.write(filePath, body);
   } catch (error) {
-    console.error(
+    logError(
       '[configfile] Error writing dynamic config:',
       error instanceof Error ? error.message : String(error)
     );

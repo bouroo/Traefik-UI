@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import * as traefik from '../traefik/client';
 import { authMiddleware } from '../auth/middleware';
+import { logError } from '../lib/logger';
 
 const overview = new Hono();
 
@@ -16,7 +17,7 @@ overview.get('/', async (c) => {
 
     return c.json(data);
   } catch (error) {
-    console.error('[overview] Error fetching overview:', error);
+    logError('[overview] Error fetching overview:', error);
     return c.json({ error: 'Internal server error while fetching overview' }, 500);
   }
 });
@@ -31,7 +32,7 @@ overview.get('/raw', async (c) => {
 
     return c.json(data);
   } catch (error) {
-    console.error('[overview] Error fetching raw data:', error);
+    logError('[overview] Error fetching raw data:', error);
     return c.json({ error: 'Internal server error while fetching raw data' }, 500);
   }
 });
@@ -46,7 +47,7 @@ overview.get('/version', async (c) => {
 
     return c.json(data);
   } catch (error) {
-    console.error('[overview] Error fetching version:', error);
+    logError('[overview] Error fetching version:', error);
     return c.json({ error: 'Internal server error while fetching version' }, 500);
   }
 });

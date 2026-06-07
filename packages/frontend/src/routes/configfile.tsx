@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Settings, FileText } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -66,11 +67,11 @@ export function ConfigfilePage() {
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
         <TabsList>
           <TabsTrigger value="dynamic">
-            <i className="ri-settings-3-line mr-1" />
+            <Settings className="h-4 w-4 mr-1" />
             Dynamic
           </TabsTrigger>
           <TabsTrigger value="static">
-            <i className="ri-settings-2-line mr-1" />
+            <FileText className="h-4 w-4 mr-1" />
             Static
           </TabsTrigger>
         </TabsList>

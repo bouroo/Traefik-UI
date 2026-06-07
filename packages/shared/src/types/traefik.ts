@@ -50,7 +50,7 @@ export interface TraefikMiddleware {
   provider: string;
   status: string;
   type: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TraefikEntryPoint {
@@ -69,7 +69,7 @@ export interface TraefikEntryPoint {
   };
   proxyProtocol?: { insecure?: boolean; trustedIPs?: string[] };
   forwardedHeaders?: { insecure?: boolean; trustedIPs?: string[] };
-  http?: { middlewares?: string[]; tls?: any };
+  http?: { middlewares?: string[]; tls?: Record<string, unknown> };
   http3?: { advertisedPort?: number };
 }
 
@@ -89,7 +89,7 @@ export interface TraefikVersion {
 }
 
 export interface TraefikRawData {
-  routers?: Record<string, any>;
-  services?: Record<string, any>;
-  middlewares?: Record<string, any>;
+  routers?: Record<string, unknown>;
+  services?: Record<string, unknown>;
+  middlewares?: Record<string, unknown>;
 }

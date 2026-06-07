@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import * as traefik from '../traefik/client';
 import { authMiddleware } from '../auth/middleware';
+import { logError } from '../lib/logger';
 
 const services = new Hono();
 
@@ -20,7 +21,7 @@ services.get('/', async (c) => {
 
     return c.json({ http, tcp, udp });
   } catch (error) {
-    console.error('Failed to fetch services:', error);
+    logError('Failed to fetch services:', error);
     return c.json({ error: 'Failed to fetch services' }, 500);
   }
 });
@@ -30,7 +31,7 @@ services.get('/http', async (c) => {
     const servicesList = await traefik.getHttpServices();
     return c.json({ services: servicesList });
   } catch (error) {
-    console.error('Failed to fetch HTTP services:', error);
+    logError('Failed to fetch HTTP services:', error);
     return c.json({ error: 'Failed to fetch HTTP services' }, 500);
   }
 });
@@ -46,7 +47,7 @@ services.get('/http/:name', async (c) => {
 
     return c.json({ service });
   } catch (error) {
-    console.error('Failed to fetch HTTP service detail:', error);
+    logError('Failed to fetch HTTP service detail:', error);
     return c.json({ error: 'Failed to fetch HTTP service detail' }, 500);
   }
 });
@@ -56,7 +57,7 @@ services.get('/tcp', async (c) => {
     const servicesList = await traefik.getTcpServices();
     return c.json({ services: servicesList });
   } catch (error) {
-    console.error('Failed to fetch TCP services:', error);
+    logError('Failed to fetch TCP services:', error);
     return c.json({ error: 'Failed to fetch TCP services' }, 500);
   }
 });
@@ -74,7 +75,7 @@ services.get('/tcp/:name', async (c) => {
 
     return c.json({ service });
   } catch (error) {
-    console.error('Failed to fetch TCP service detail:', error);
+    logError('Failed to fetch TCP service detail:', error);
     return c.json({ error: 'Failed to fetch TCP service detail' }, 500);
   }
 });
@@ -84,7 +85,7 @@ services.get('/udp', async (c) => {
     const servicesList = await traefik.getUdpServices();
     return c.json({ services: servicesList });
   } catch (error) {
-    console.error('Failed to fetch UDP services:', error);
+    logError('Failed to fetch UDP services:', error);
     return c.json({ error: 'Failed to fetch UDP services' }, 500);
   }
 });
@@ -102,7 +103,7 @@ services.get('/udp/:name', async (c) => {
 
     return c.json({ service });
   } catch (error) {
-    console.error('Failed to fetch UDP service detail:', error);
+    logError('Failed to fetch UDP service detail:', error);
     return c.json({ error: 'Failed to fetch UDP service detail' }, 500);
   }
 });

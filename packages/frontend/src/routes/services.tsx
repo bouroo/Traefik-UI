@@ -61,7 +61,7 @@ function ServiceDetailDialog({
 }) {
   const { data: detailData, isLoading } = useQuery<ServiceDetail>({
     queryKey: ['service', protocol, name],
-    queryFn: () => getService(protocol, name) as Promise<ServiceDetail>,
+    queryFn: () => getService(protocol, name) as unknown as Promise<ServiceDetail>,
     enabled: open && !!name,
   });
 

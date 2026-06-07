@@ -1,4 +1,11 @@
 import { toast } from 'sonner';
+import type {
+  TraefikRouter,
+  TraefikService,
+  TraefikMiddleware,
+  TraefikEntryPoint,
+  TraefikOverview,
+} from '@traefik-ui/shared';
 
 const TOKEN_KEY = 'traefik_ui_token';
 
@@ -61,15 +68,15 @@ export async function getMe(): Promise<{ user: User; permissions: string[] }> {
 
 interface DashboardData {
   overview: {
-    http: Record<string, unknown>;
-    tcp: Record<string, unknown>;
-    udp: Record<string, unknown>;
+    http: Record<string, { routers: number; services: number; middlewares?: number }>;
+    tcp: Record<string, { routers: number; services: number; middlewares?: number }>;
+    udp: Record<string, { routers: number; services: number; middlewares?: number }>;
     features: {
       tracing: string;
       metrics: string;
       accessLog: boolean;
     };
-    providers: unknown[];
+    providers: string[];
   };
   version: {
     version: string;
@@ -77,7 +84,7 @@ interface DashboardData {
     startDate: string;
     uptime: string;
   };
-  entrypoints: unknown[];
+  entrypoints: TraefikEntryPoint[];
   connectionStatus: 'connected' | 'disconnected';
 }
 
@@ -86,63 +93,63 @@ export async function getDashboard(): Promise<DashboardData> {
 }
 
 interface RoutersResponse {
-  http: unknown[];
-  tcp: unknown[];
-  udp: unknown[];
+  http: TraefikRouter[];
+  tcp: TraefikRouter[];
+  udp: TraefikRouter[];
 }
 
 export async function getRouters(): Promise<RoutersResponse> {
   return fetchApi<RoutersResponse>('/api/routers');
 }
 
-export async function getHttpRouters(): Promise<{ routers: unknown[] }> {
-  return fetchApi<{ routers: unknown[] }>('/api/routers/http');
+export async function getHttpRouters(): Promise<{ routers: TraefikRouter[] }> {
+  return fetchApi<{ routers: TraefikRouter[] }>('/api/routers/http');
 }
 
-export async function getTcpRouters(): Promise<{ routers: unknown[] }> {
-  return fetchApi<{ routers: unknown[] }>('/api/routers/tcp');
+export async function getTcpRouters(): Promise<{ routers: TraefikRouter[] }> {
+  return fetchApi<{ routers: TraefikRouter[] }>('/api/routers/tcp');
 }
 
-export async function getUdpRouters(): Promise<{ routers: unknown[] }> {
-  return fetchApi<{ routers: unknown[] }>('/api/routers/udp');
+export async function getUdpRouters(): Promise<{ routers: TraefikRouter[] }> {
+  return fetchApi<{ routers: TraefikRouter[] }>('/api/routers/udp');
 }
 
-export async function getRouter(protocol: string, name: string): Promise<unknown> {
+export async function getRouter(protocol: string, name: string): Promise<TraefikRouter> {
   const encodedName = encodeURIComponent(name);
-  return fetchApi<unknown>(`/api/routers/${protocol}/${encodedName}`);
+  return fetchApi<TraefikRouter>(`/api/routers/${protocol}/${encodedName}`);
 }
 
 interface ServicesResponse {
-  http: unknown[];
-  tcp: unknown[];
-  udp: unknown[];
+  http: TraefikService[];
+  tcp: TraefikService[];
+  udp: TraefikService[];
 }
 
 export async function getServices(): Promise<ServicesResponse> {
   return fetchApi<ServicesResponse>('/api/services');
 }
 
-export async function getService(protocol: string, name: string): Promise<unknown> {
+export async function getService(protocol: string, name: string): Promise<TraefikService> {
   const encodedName = encodeURIComponent(name);
-  return fetchApi<unknown>(`/api/services/${protocol}/${encodedName}`);
+  return fetchApi<TraefikService>(`/api/services/${protocol}/${encodedName}`);
 }
 
 interface MiddlewaresResponse {
-  http: unknown[];
-  tcp: unknown[];
+  http: TraefikMiddleware[];
+  tcp: TraefikMiddleware[];
 }
 
 export async function getMiddlewares(): Promise<MiddlewaresResponse> {
   return fetchApi<MiddlewaresResponse>('/api/middlewares');
 }
 
-export async function getMiddleware(protocol: string, name: string): Promise<unknown> {
+export async function getMiddleware(protocol: string, name: string): Promise<TraefikMiddleware> {
   const encodedName = encodeURIComponent(name);
-  return fetchApi<unknown>(`/api/middlewares/${protocol}/${encodedName}`);
+  return fetchApi<TraefikMiddleware>(`/api/middlewares/${protocol}/${encodedName}`);
 }
 
-export async function getOverview(): Promise<unknown> {
-  return fetchApi<unknown>('/api/overview');
+export async function getOverview(): Promise<TraefikOverview> {
+  return fetchApi<TraefikOverview>('/api/overview');
 }
 
 interface SystemStats {
@@ -172,8 +179,8 @@ export async function getTlsCertificates(): Promise<{ certificates: Certificate[
   return fetchApi<{ certificates: Certificate[] }>('/api/tls/certificates');
 }
 
-export async function getEntrypoints(): Promise<{ entrypoints: unknown[] }> {
-  return fetchApi<{ entrypoints: unknown[] }>('/api/entrypoints');
+export async function getEntrypoints(): Promise<{ entrypoints: TraefikEntryPoint[] }> {
+  return fetchApi<{ entrypoints: TraefikEntryPoint[] }>('/api/entrypoints');
 }
 
 interface AccessLogLine {

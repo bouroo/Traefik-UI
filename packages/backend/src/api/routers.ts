@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import * as traefik from '../traefik/client';
 import { authMiddleware } from '../auth/middleware';
+import { logError } from '../lib/logger';
 
 const routers = new Hono();
 
@@ -20,7 +21,7 @@ routers.get('/', async (c) => {
 
     return c.json({ http, tcp, udp });
   } catch (error) {
-    console.error('Failed to fetch routers:', error);
+    logError('Failed to fetch routers:', error);
     return c.json({ error: 'Failed to fetch routers' }, 500);
   }
 });
@@ -30,7 +31,7 @@ routers.get('/http', async (c) => {
     const routers = await traefik.getHttpRouters();
     return c.json({ routers });
   } catch (error) {
-    console.error('Failed to fetch HTTP routers:', error);
+    logError('Failed to fetch HTTP routers:', error);
     return c.json({ error: 'Failed to fetch HTTP routers' }, 500);
   }
 });
@@ -57,7 +58,7 @@ routers.get('/http/:name', async (c) => {
 
     return c.json({ router, service, middlewares });
   } catch (error) {
-    console.error('Failed to fetch HTTP router detail:', error);
+    logError('Failed to fetch HTTP router detail:', error);
     return c.json({ error: 'Failed to fetch HTTP router detail' }, 500);
   }
 });
@@ -67,7 +68,7 @@ routers.get('/tcp', async (c) => {
     const routers = await traefik.getTcpRouters();
     return c.json({ routers });
   } catch (error) {
-    console.error('Failed to fetch TCP routers:', error);
+    logError('Failed to fetch TCP routers:', error);
     return c.json({ error: 'Failed to fetch TCP routers' }, 500);
   }
 });
@@ -100,7 +101,7 @@ routers.get('/tcp/:name', async (c) => {
 
     return c.json({ router, service, middlewares });
   } catch (error) {
-    console.error('Failed to fetch TCP router detail:', error);
+    logError('Failed to fetch TCP router detail:', error);
     return c.json({ error: 'Failed to fetch TCP router detail' }, 500);
   }
 });
@@ -110,7 +111,7 @@ routers.get('/udp', async (c) => {
     const routers = await traefik.getUdpRouters();
     return c.json({ routers });
   } catch (error) {
-    console.error('Failed to fetch UDP routers:', error);
+    logError('Failed to fetch UDP routers:', error);
     return c.json({ error: 'Failed to fetch UDP routers' }, 500);
   }
 });
@@ -138,7 +139,7 @@ routers.get('/udp/:name', async (c) => {
 
     return c.json({ router, service });
   } catch (error) {
-    console.error('Failed to fetch UDP router detail:', error);
+    logError('Failed to fetch UDP router detail:', error);
     return c.json({ error: 'Failed to fetch UDP router detail' }, 500);
   }
 });

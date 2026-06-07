@@ -71,7 +71,7 @@ function RouterDetailDialog({
 }) {
   const { data: detailData, isLoading } = useQuery<RouterDetail>({
     queryKey: ['router', protocol, name],
-    queryFn: () => getRouter(protocol, name) as Promise<RouterDetail>,
+    queryFn: () => getRouter(protocol, name) as unknown as Promise<RouterDetail>,
     enabled: open && !!name,
   });
 

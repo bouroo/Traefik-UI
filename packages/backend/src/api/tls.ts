@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { config } from '../config';
 import { authMiddleware } from '../auth/middleware';
+import { logError } from '../lib/logger';
 
 const tls = new Hono();
 
@@ -111,7 +112,7 @@ function parseCertificateFields(pemCert: string): CertificateInfo {
       result.issuer = cnMatch[1];
     }
   } catch (error) {
-    console.error('[tls] Error parsing certificate:', error);
+    logError('[tls] Error parsing certificate:', error);
   }
 
   return result;
@@ -210,7 +211,7 @@ tls.get('/certificates', async (c) => {
 
     return c.json({ certificates });
   } catch (error) {
-    console.error('[tls] Error reading certificates:', error);
+    logError('[tls] Error reading certificates:', error);
     return c.json({ error: 'Internal server error while reading certificates' }, 500);
   }
 });

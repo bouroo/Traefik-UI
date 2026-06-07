@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import * as traefik from '../traefik/client';
 import { authMiddleware } from '../auth/middleware';
 import { requireResourcePermission } from '../auth/rbac';
+import { logError } from '../lib/logger';
 import {
   getResourceConfig,
   getProtocolsForResource,
@@ -45,7 +46,7 @@ resources.get(
 
       return c.json({ [resourceConfig.name]: items });
     } catch (error) {
-      console.error(`[resources] Failed to fetch ${protocol}/${resourceType}:`, error);
+      logError(`[resources] Failed to fetch ${protocol}/${resourceType}:`, error);
       return c.json({ error: `Failed to fetch ${protocol} ${resourceType}` }, 500);
     }
   }
@@ -132,7 +133,7 @@ resources.get(
 
       return c.json({ [resourceConfig.singular]: item, ...associated });
     } catch (error) {
-      console.error(`[resources] Failed to fetch ${protocol}/${resourceType}/${name}:`, error);
+      logError(`[resources] Failed to fetch ${protocol}/${resourceType}/${name}:`, error);
       return c.json({ error: `Failed to fetch ${resourceType} detail` }, 500);
     }
   }
@@ -158,7 +159,7 @@ resources.get(
 
       return c.json(response);
     } catch (error) {
-      console.error(`[resources] Failed to fetch ${resourceType}:`, error);
+      logError(`[resources] Failed to fetch ${resourceType}:`, error);
       return c.json({ error: `Failed to fetch ${resourceType}` }, 500);
     }
   }
