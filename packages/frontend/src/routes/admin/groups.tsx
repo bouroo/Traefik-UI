@@ -41,7 +41,7 @@ interface Role {
   description: string | null;
 }
 
-export function GroupsPage() {
+export default function GroupsPage() {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission('system.users.write');
   const queryClient = useQueryClient();

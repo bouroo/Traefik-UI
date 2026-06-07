@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import type { Context } from 'hono';
 import { getDb } from '../../db';
 import { authMiddleware } from '../../auth/middleware';
 import { requirePermission } from '../../auth/rbac';

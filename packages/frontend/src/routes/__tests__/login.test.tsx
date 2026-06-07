@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { LoginPage } from '../login';
-import { useAuthStore } from '@/stores/auth-store';
 
 const mockNavigate = vi.fn();
 
@@ -17,7 +16,7 @@ describe('LoginPage', () => {
     mockNavigate.mockClear();
 
     mockFetch = vi.fn();
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as unknown as typeof fetch;
 
     mockFetch.mockImplementation((url: string) => {
       if (url === '/api/auth/sso/providers') {

@@ -42,7 +42,7 @@ interface Permission {
 
 const BUILT_IN_ROLES = ['super_admin', 'operator', 'viewer'];
 
-export function RolesPage() {
+export default function RolesPage() {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission('system.roles.write');
   const queryClient = useQueryClient();

@@ -43,7 +43,7 @@ interface Role {
   description: string | null;
 }
 
-export function UsersPage() {
+export default function UsersPage() {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission('system.users.write');
   const queryClient = useQueryClient();

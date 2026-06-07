@@ -4,7 +4,6 @@ import {
   setupTestUser,
   getTestToken,
   authRequest,
-  createRequest,
   cleanupTestEnv,
   getDb,
 } from './helpers';

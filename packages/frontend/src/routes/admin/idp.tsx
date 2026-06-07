@@ -35,7 +35,7 @@ interface SsoProvider {
   updated_at?: string;
 }
 
-export function IdpPage() {
+export default function IdpPage() {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission('system.idp.write');
   const queryClient = useQueryClient();

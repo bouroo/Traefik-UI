@@ -66,7 +66,7 @@ app.route('/api/configfile', configfile);
 app.route('/api/config-crud', configCrud);
 
 app.use('/assets/*', serveStatic({ root: frontendDir }));
-app.get('/*', serveStatic({ path: resolve(frontendDir, 'index.html') }));
+app.get('/*', serveStatic({ root: frontendDir, path: 'index.html' }));
 
 app.onError((err, c) => {
   logError('Error:', err);

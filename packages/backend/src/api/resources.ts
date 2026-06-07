@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import * as traefik from '../traefik/client';
 import { authMiddleware } from '../auth/middleware';
-import { requirePermission, requireResourcePermission } from '../auth/rbac';
+import { requireResourcePermission } from '../auth/rbac';
 import {
   getResourceConfig,
   getProtocolsForResource,

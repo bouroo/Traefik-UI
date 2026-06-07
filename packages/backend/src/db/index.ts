@@ -1,6 +1,6 @@
 import { Database } from 'bun:sqlite';
 import { config } from '../config';
-import { initDb } from './schema';
+import { initDb, assignAdminRoles } from './schema';
 import { runMigrations } from './migrations/runner';
 
 let db: Database | undefined;
@@ -12,6 +12,7 @@ export function getDb(): Database {
     db.run('PRAGMA foreign_keys = ON');
     initDb(db);
     runMigrations(db);
+    assignAdminRoles(db);
   }
   return db;
 }

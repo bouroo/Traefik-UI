@@ -33,7 +33,7 @@ ssoProviders.get('/:id', requirePermission('system.idp.read'), async (c) => {
   if (!idp) {
     return c.json({ error: 'Identity provider not found' }, 404);
   }
-  const { clientSecretEncrypted, ...configWithoutSecret } = idp.config;
+  const { clientSecretEncrypted: _clientSecretEncrypted, ...configWithoutSecret } = idp.config;
   return c.json({ id: idp.id, name: idp.name, provider_type: 'oidc', enabled: idp.enabled, config: configWithoutSecret });
 });
 

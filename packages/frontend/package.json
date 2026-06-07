@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "analyze": "ANALYZE=true vite build",
     "e2e": "playwright test",
+    "e2e:container": "playwright test --config=playwright.config.container.ts",
     "e2e:ui": "playwright test --ui"
   },
   "dependencies": {

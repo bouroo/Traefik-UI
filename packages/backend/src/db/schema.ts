@@ -100,3 +100,24 @@ export async function initDb(db: Database): Promise<void> {
     }
   }
 }
+
+/**
+ * Assign super_admin role to admin users who have no role assignments.
+ * Called after migrations ensure the roles/permissions tables exist.
+ */
+export function assignAdminRoles(db: Database): void {
+  try {
+    db.run(`
+      INSERT OR IGNORE INTO user_roles (user_id, role_id)
+      SELECT u.id, r.id
+      FROM users u
+      JOIN roles r ON r.name = 'super_admin'
+      WHERE u.is_admin = 1
+        AND NOT EXISTS (
+          SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id
+        )
+    `);
+  } catch {
+    // Roles table may not exist yet (pre-migration) — safe to ignore
+  }
+}

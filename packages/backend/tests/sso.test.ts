@@ -44,7 +44,7 @@ describe('GET /api/auth/sso/providers', () => {
 
 describe('SSO Admin API', () => {
   let superAdminToken: string;
-  let regularToken: string;
+  let _regularToken: string;
 
   beforeEach(async () => {
     await setupTestUser();
