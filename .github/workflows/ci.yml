@@ -51,3 +51,154 @@ jobs:
         with:
           name: dist
           path: packages/backend/dist/
+
+  # ---- Integration tests against a real Traefik container (via podman) ----
+  # Note: the integration suite manages its own Traefik container lifecycle
+  # (start/stop via podman), so we only need a runtime to be available.
+  # podman ships pre-installed on ubuntu-latest runners, so no setup step
+  # is required. If this job ever fails on a self-hosted runner, ensure
+  # podman (or docker) is installed and the user can run rootless containers.
+  integration:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Verify container runtime
+        run: |
+          if command -v podman >/dev/null 2>&1; then
+            echo "Runtime: podman $(podman --version)"
+          elif command -v docker >/dev/null 2>&1; then
+            echo "Runtime: docker $(docker --version)"
+          else
+            echo "::error::Neither podman nor docker is available on this runner"
+            exit 1
+          fi
+
+      - name: Run integration tests
+        timeout-minutes: 10
+        run: cd packages/backend && bun test tests/integration.test.ts
+
+  # ---- End-to-end tests against a running dev stack ----
+  # Spins up Traefik + the backend + the frontend, then runs Playwright.
+  # The frontend dev server is expected to proxy /api to the backend on 3001.
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Verify container runtime
+        run: |
+          if command -v podman >/dev/null 2>&1; then
+            echo "Runtime: podman $(podman --version)"
+            echo "PODMAN_RUNTIME=podman" >> "$GITHUB_ENV"
+          else
+            echo "::error::podman is required for the e2e job on ubuntu-latest"
+            exit 1
+          fi
+
+      - name: Start Traefik container
+        run: |
+          podman run -d --rm --name traefik-e2e \
+            -p 8080 \
+            docker.io/library/traefik:v3 \
+            --api.insecure=true \
+            --entrypoints.web.address=:80 \
+            --entrypoints.websecure.address=:443 \
+            --log.level=INFO
+          # Capture the mapped port
+          MAPPED_PORT=$(podman port traefik-e2e 8080 | head -1 | awk -F: '{print $NF}')
+          echo "TRAEFIK_API_URL=http://localhost:${MAPPED_PORT}" >> "$GITHUB_ENV"
+          echo "Traefik API URL: ${TRAEFIK_API_URL}"
+
+      - name: Wait for Traefik
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf "${TRAEFIK_API_URL}/api/version" >/dev/null 2>&1; then
+              echo "Traefik is ready"
+              exit 0
+            fi
+            echo "Waiting for Traefik... ($i/30)"
+            sleep 1
+          done
+          echo "::error::Traefik did not become ready in time"
+          podman logs traefik-e2e || true
+          exit 1
+
+      - name: Start backend dev server
+        env:
+          TRAEFIK_API_URL: ${{ env.TRAEFIK_API_URL }}
+        run: |
+          cd packages/backend
+          nohup bun run dev > /tmp/backend.log 2>&1 &
+          BACKEND_PID=$!
+          disown || true
+          echo "BACKEND_PID=$BACKEND_PID" >> "$GITHUB_ENV"
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/health >/dev/null 2>&1; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            echo "Waiting for backend... ($i/30)"
+            sleep 1
+          done
+          echo "::error::Backend did not become ready in time"
+          tail -n 100 /tmp/backend.log || true
+          exit 1
+
+      - name: Start frontend dev server
+        run: |
+          cd packages/frontend
+          nohup bun run dev > /tmp/frontend.log 2>&1 &
+          FRONTEND_PID=$!
+          disown || true
+          echo "FRONTEND_PID=$FRONTEND_PID" >> "$GITHUB_ENV"
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5173 >/dev/null 2>&1; then
+              echo "Frontend is ready"
+              exit 0
+            fi
+            echo "Waiting for frontend... ($i/30)"
+            sleep 1
+          done
+          echo "::error::Frontend did not become ready in time"
+          tail -n 100 /tmp/frontend.log || true
+          exit 1
+
+      - name: Install Playwright browsers
+        run: cd packages/frontend && bunx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        timeout-minutes: 10
+        run: cd packages/frontend && bun run e2e
+
+      - name: Stop dev servers
+        if: always()
+        run: |
+          if [ -n "${BACKEND_PID:-}" ]; then kill "$BACKEND_PID" 2>/dev/null || true; fi
+          if [ -n "${FRONTEND_PID:-}" ]; then kill "$FRONTEND_PID" 2>/dev/null || true; fi
+
+      - name: Stop Traefik container
+        if: always()
+        run: podman rm -f traefik-e2e || true

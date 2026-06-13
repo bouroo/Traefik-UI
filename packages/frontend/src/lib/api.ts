@@ -9,6 +9,20 @@ import type {
 
 const TOKEN_KEY = 'traefik_ui_token';
 
+export interface ApiErrorBody {
+  error: string;
+  code?: string;
+}
+
+export function isApiError(error: unknown): error is ApiErrorBody {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'error' in error &&
+    typeof (error as { error: unknown }).error === 'string'
+  );
+}
+
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const token = localStorage.getItem(TOKEN_KEY);
   const headers: HeadersInit = {
@@ -16,10 +30,16 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const response = await fetch(endpoint, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      ...options,
+      headers,
+    });
+  } catch (err) {
+    const message = err instanceof Error && err.message ? err.message : 'Network request failed';
+    throw new Error(`Network error: ${message}`);
+  }
 
   if (response.status === 403) {
     toast.error('Access Denied');

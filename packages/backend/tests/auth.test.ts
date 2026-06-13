@@ -171,7 +171,10 @@ describe('POST /api/auth/change-password', () => {
     const res = await app.request(req);
     expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body).toEqual({ error: 'New password must be at least 6 characters' });
+    expect(body).toEqual({
+      error: 'Validation failed',
+      details: [{ field: 'newPassword', message: 'newPassword must be at least 6 characters' }],
+    });
   });
 
   it('should return 400 for missing fields', async () => {

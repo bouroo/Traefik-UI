@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/app-shell';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { LoginPage } from '@/routes/login';
 import { DashboardPage } from '@/routes/dashboard';
 import { RoutersPage } from '@/routes/routers';
@@ -28,13 +29,15 @@ function AdminSuspense({ children }: { children: React.ReactNode }) {
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/*"
-        element={
-          <AppShell>
-            <Routes>
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/*"
+          element={
+            <AppShell>
+              <ErrorBoundary>
+                <Routes>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/routers" element={<RoutersPage />} />
               <Route path="/services" element={<ServicesPage />} />
@@ -76,12 +79,14 @@ export function App() {
                   </AdminSuspense>
                 }
               />
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </AppShell>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+              </ErrorBoundary>
+            </AppShell>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ErrorBoundary>
   );
 }

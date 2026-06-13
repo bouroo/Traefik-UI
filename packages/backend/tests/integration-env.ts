@@ -10,3 +10,4 @@ process.env.HOST = '127.0.0.1';
 process.env.CORS_ORIGIN = '*';
 process.env.ACME_JSON_PATH = '';
 process.env.ACCESS_LOG_PATH = '';
+process.env.RATE_LIMIT_DISABLED = 'true';
