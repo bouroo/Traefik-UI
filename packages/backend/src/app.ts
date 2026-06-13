@@ -8,6 +8,7 @@ import { config } from './config';
 import { logError } from './lib/logger';
 import { isShuttingDown } from './lib/lifecycle';
 import { rateLimit } from './middleware/rate-limit';
+import { securityHeaders } from './middleware/security-headers';
 import { getDb } from './db';
 import { getVersion } from './traefik/client';
 import packageJson from '../package.json' with { type: 'json' };
@@ -51,6 +52,8 @@ app.use(
     maxAge: 86400,
   })
 );
+
+app.use('*', securityHeaders());
 
 if (config.logLevel !== 'silent') {
   app.use('*', logger());

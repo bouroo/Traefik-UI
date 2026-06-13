@@ -46,6 +46,11 @@ export const config = {
     origin: Bun.env.CORS_ORIGIN || '*',
   },
 
+  // Security
+  security: {
+    hsts: Bun.env.HSTS_ENABLED === 'true',
+  },
+
   // Logging
   logLevel: Bun.env.LOG_LEVEL || 'info',
 };

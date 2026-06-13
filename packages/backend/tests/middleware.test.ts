@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { Hono } from 'hono';
 import { rateLimit, _resetRateLimitState } from '../src/middleware/rate-limit';
+import { securityHeaders } from '../src/middleware/security-headers';
 import { validateBody, validateData } from '../src/middleware/validate';
 import type { ValidationSchema } from '../src/middleware/validate';
+import { setupTestUser, createRequest } from './helpers';
 
 describe('rateLimit middleware', () => {
   beforeEach(() => {
@@ -132,5 +134,62 @@ describe('validateBody middleware', () => {
       headers: { 'Content-Type': 'application/json' },
     });
     expect(res.status).toBe(200);
+  });
+});
+
+describe('securityHeaders middleware', () => {
+  beforeEach(async () => {
+    await setupTestUser();
+  });
+
+  it('sets baseline security headers on responses', async () => {
+    const app = new Hono();
+    app.use('*', securityHeaders());
+    app.get('/test', (c) => c.json({ ok: true }));
+
+    const res = await app.request('http://localhost/test');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(res.headers.get('x-frame-options')).toBe('DENY');
+    expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
+    expect(res.headers.get('x-xss-protection')).toBe('0');
+    expect(res.headers.get('permissions-policy')).toBe('geolocation=(), microphone=(), camera=()');
+  });
+
+  it('omits HSTS header by default', async () => {
+    const app = new Hono();
+    app.use('*', securityHeaders());
+    app.get('/test', (c) => c.json({ ok: true }));
+
+    const res = await app.request('http://localhost/test');
+    expect(res.headers.get('strict-transport-security')).toBeNull();
+  });
+
+  it('sets HSTS header when config.security.hsts is true', async () => {
+    const { config } = await import('../src/config');
+    const original = config.security.hsts;
+    Object.defineProperty(config.security, 'hsts', { value: true, configurable: true });
+
+    try {
+      const app = new Hono();
+      app.use('*', securityHeaders());
+      app.get('/test', (c) => c.json({ ok: true }));
+
+      const res = await app.request('http://localhost/test');
+      expect(res.headers.get('strict-transport-security')).toBe(
+        'max-age=31536000; includeSubDomains'
+      );
+    } finally {
+      Object.defineProperty(config.security, 'hsts', { value: original, configurable: true });
+    }
+  });
+
+  it('sets security headers on the /api/health endpoint via the app', async () => {
+    const { app } = await import('./helpers');
+    const res = await app.request(createRequest('/api/health'));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(res.headers.get('x-frame-options')).toBe('DENY');
+    expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
   });
 });

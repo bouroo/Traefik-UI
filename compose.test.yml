@@ -1,0 +1,18 @@
+# Test overlay for container integration tests.
+# Ensures a fresh database on every run (first-run admin password generation).
+# Usage:
+#   podman compose -f compose.yml -f compose.test.yml up -d
+services:
+  traefik-ui:
+    image: traefik-ui:test
+    build:
+      dockerfile: Containerfile
+    volumes:
+      # Ephemeral named volume — fresh DB on every test run.
+      - test-ui-data:/app/data
+      - ./data/traefik/logs:/var/log/traefik:ro
+      - ./data/traefik/acme.json:/etc/traefik/acme.json:ro
+      - ./data/traefik/dynamic.yml:/etc/traefik/dynamic.yml
+
+volumes:
+  test-ui-data:

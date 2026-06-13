@@ -1,4 +1,4 @@
-.PHONY: help dev build test test-integration test-e2e lint typecheck format clean container-build container-up container-down container-logs
+.PHONY: help dev build test test-integration test-e2e test-container lint typecheck format clean container-build container-up container-down container-logs
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -20,6 +20,9 @@ test-e2e: ## Run E2E tests (starts dev servers automatically)
 
 test-e2e-container: ## Run E2E tests against containerized stack
 	./scripts/test-e2e-container.sh
+
+test-container: ## Run container integration tests (builds image, runs full stack)
+	./scripts/test-container-integration.sh
 
 lint: ## Lint all packages
 	bun run lint

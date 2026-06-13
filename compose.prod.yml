@@ -1,0 +1,72 @@
+# Production overlay for Traefik-UI stack.
+# Usage:
+#   podman compose -f compose.yml -f compose.prod.yml up -d
+#
+# Required environment variables:
+#   JWT_SECRET     — strong random secret (e.g. `openssl rand -base64 48`)
+#   ENCRYPTION_KEY — strong random key for IdP client secret encryption
+#
+# Optional:
+#   CORS_ORIGIN — restricts browser origins (default: *)
+
+services:
+  traefik-proxy:
+    # In production, the Traefik API/dashboard is NOT exposed publicly.
+    # The Traefik-UI service reaches it over the internal Docker network
+    # at http://traefik-proxy:8080.
+    command:
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - '--providers.file.filename=/etc/traefik/dynamic.yml'
+      - '--providers.file.watch=true'
+      - '--accesslog=true'
+      - '--accesslog.filepath=/var/log/traefik/access.log'
+      - '--log.level=INFO'
+    # Drop the 8080:8080 port mapping; only the HTTP/HTTPS entrypoints
+    # should be reachable from the host. The API stays internal.
+    ports:
+      - '80:80'
+      - '443:443'
+
+  traefik-ui:
+    # Drop the explicit `user: "0:0"` override so the container runs as
+    # the non-root `traefikui` user (UID 10001) created in the Containerfile.
+    # SQLite writes are now satisfied via the named `ui-data` volume below.
+    # Replace the host bind mount with a named volume so the non-root
+    # user inside the container can write to it without host permission juggling.
+    volumes:
+      # Writable data directory (DB, backups) — owned by traefikui inside the container.
+      - ui-data:/app/data
+      # Traefik logs (read-only access)
+      - ./data/traefik/logs:/var/log/traefik:ro
+      # ACME certificates (read-only access)
+      - ./data/traefik/acme.json:/etc/traefik/acme.json:ro
+      # Traefik dynamic config (read-write for UI management)
+      - ./data/traefik/dynamic.yml:/etc/traefik/dynamic.yml
+    environment:
+      - TRAEFIK_API_URL=http://traefik-proxy:8080
+      - DB_PATH=/app/data/traefik-ui.db
+      # Secrets MUST come from the host environment — never hardcode in committed YAML.
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set}
+      - ACCESS_LOG_PATH=/var/log/traefik/access.log
+      - ACME_JSON_PATH=/etc/traefik/acme.json
+      - DYNAMIC_CONFIG_PATH=/etc/traefik/dynamic.yml
+      - LOG_LEVEL=info
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - HOST=0.0.0.0
+      - PORT=3000
+    # Hardening: read-only root filesystem with a writable tmpfs for /tmp.
+    # SQLite and the app write only to the named `ui-data` volume.
+    read_only: true
+    tmpfs:
+      - /tmp
+    # Resource limits (swarm-style; honored by podman compose as well).
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+volumes:
+  ui-data:

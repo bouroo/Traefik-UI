@@ -89,6 +89,32 @@ jobs:
         timeout-minutes: 10
         run: cd packages/backend && bun test tests/integration.test.ts
 
+  # ---- Container integration tests (build image, run full compose stack) ----
+  # Builds the production image, starts Traefik + Traefik-UI via compose,
+  # and verifies health, login, and dashboard endpoints end-to-end.
+  container-integration:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Verify container runtime and tools
+        run: |
+          if command -v podman >/dev/null 2>&1; then
+            echo "Runtime: podman $(podman --version)"
+          elif command -v docker >/dev/null 2>&1; then
+            echo "Runtime: docker $(docker --version)"
+          else
+            echo "::error::Neither podman nor docker is available on this runner"
+            exit 1
+          fi
+          command -v curl >/dev/null 2>&1 || { echo "::error::curl not found"; exit 1; }
+          command -v jq   >/dev/null 2>&1 || { echo "::error::jq not found"; exit 1; }
+
+      - name: Run container integration tests
+        timeout-minutes: 10
+        run: ./scripts/test-container-integration.sh
+
   # ---- End-to-end tests against a running dev stack ----
   # Spins up Traefik + the backend + the frontend, then runs Playwright.
   # The frontend dev server is expected to proxy /api to the backend on 3001.

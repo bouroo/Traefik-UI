@@ -93,6 +93,7 @@ podman compose logs traefik-ui | grep "Password:"
 | `STATIC_CONFIG_PATH` | (empty) | Path to Traefik static config YAML |
 | `LOG_LEVEL` | `info` | Log level (debug/info/warn/error/silent) |
 | `CORS_ORIGIN` | `*` | CORS allowed origin |
+| `HSTS_ENABLED` | `false` | Enable Strict-Transport-Security header (only when behind TLS) |
 
 ## API Endpoints
 
@@ -259,6 +260,49 @@ bun run format        # Format all packages
 ```
 
 The dev server runs with `--watch` mode for auto-reload on changes. The backend test suite uses Bun's built-in test runner. The frontend uses Vitest + React Testing Library for unit tests and Playwright for E2E.
+
+## Testing
+
+```bash
+make test               # Unit tests (backend + frontend)
+make test-integration   # Integration tests (spins up Traefik container)
+make test-container     # Container integration tests (builds image, runs full stack)
+make test-e2e           # E2E tests (Playwright against dev servers)
+make test-e2e-container # E2E tests against containerized stack
+```
+
+### Container Integration Tests
+
+The container integration test (`make test-container`) builds the production image, starts the full compose stack (Traefik + Traefik-UI) with a fresh ephemeral database, and verifies:
+
+- `/api/health` responds with `ok` or `degraded`
+- Admin login flow returns a JWT token
+- Authenticated `/api/dashboard` returns 200
+
+## Production Deployment
+
+The base `compose.yml` is a development/demo stack. For production, use the overlay:
+
+```bash
+# Set required secrets (never commit these)
+export JWT_SECRET=$(openssl rand -base64 48)
+export ENCRYPTION_KEY=$(openssl rand -base64 48)
+export CORS_ORIGIN=https://traefik-ui.example.com
+
+# Start the hardened stack
+podman compose -f compose.yml -f compose.prod.yml up -d
+```
+
+The production overlay (`compose.prod.yml`) provides:
+
+- **Non-root container** — runs as `traefikui` (UID 10001), no `user: "0:0"`
+- **Named volume** for SQLite data (no host bind-mount permission issues)
+- **Read-only root filesystem** with writable `/tmp` tmpfs
+- **Resource limits** — 512MB memory, 1.0 CPU
+- **Secrets from env** — `JWT_SECRET` and `ENCRYPTION_KEY` must be set
+- **No public Traefik API** — port 8080 is not exposed; the UI reaches Traefik over the internal network
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the full production hardening checklist.
 
 ## Project Structure
 
