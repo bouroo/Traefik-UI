@@ -22,6 +22,10 @@ export const config = {
     get cacheTtlMs() {
       return parseInt(Bun.env.TRAEFIK_CACHE_TTL_MS || '2000');
     },
+    // Request timeout (ms) for upstream Traefik API calls.
+    get requestTimeoutMs() {
+      return parseInt(Bun.env.TRAEFIK_REQUEST_TIMEOUT_MS || '5000');
+    },
   },
 
   rbac: {

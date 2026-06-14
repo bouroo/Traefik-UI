@@ -81,6 +81,22 @@ export function getResourceConfig(resourceType: string): ResourceTypeConfig | un
   return RESOURCE_TYPES[resourceType];
 }
 
+/** All valid protocol names derived from PROTOCOLS */
+export const VALID_PROTOCOLS: readonly string[] = PROTOCOLS.map((p) => p.name);
+
+/** All valid resource type names derived from RESOURCE_TYPES */
+export const VALID_RESOURCE_TYPES: readonly string[] = Object.keys(RESOURCE_TYPES);
+
+/** Check whether a string is a known protocol name */
+export function isValidProtocol(p: string): boolean {
+  return VALID_PROTOCOLS.includes(p);
+}
+
+/** Check whether a string is a known resource type name */
+export function isValidResourceType(rt: string): boolean {
+  return VALID_RESOURCE_TYPES.includes(rt);
+}
+
 /** All resource type keys that appear in the navigation */
 export const NAV_RESOURCE_TYPES = Object.values(RESOURCE_TYPES)
   .filter((rt) => rt.navVisible)

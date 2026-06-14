@@ -89,6 +89,8 @@ export function requireResourcePermission(paramName: string) {
     if (!resourceType) {
       return c.json({ error: 'Bad Request' }, 400);
     }
+    // Permission mapping is an RBAC concern (permission names), intentionally
+    // separate from the Traefik protocol/resource registry.
     const map: Record<string, string> = {
       routers: 'traefik.routers.read',
       services: 'traefik.services.read',

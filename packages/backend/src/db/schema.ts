@@ -2,13 +2,44 @@ import { Database } from 'bun:sqlite';
 import { config } from '../config';
 import { logInfo } from '../lib/logger';
 
-function generateRandomPassword(length: number = 12): string {
+export function generateRandomPassword(length: number = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
-  const randomBytes = new Uint8Array(length);
-  crypto.getRandomValues(randomBytes);
+  const maxReject = 256 - (256 % chars.length); // 236; values >= this are discarded
+  // Rejection region is 20/256 ≈ 7.8% per byte. Exhausting 32 attempts per
+  // character has probability < 10^-35, so the biased fallback is unreachable
+  // in practice while still keeping the loop bounded forever.
+  const maxAttempts = length * 32;
+  let attempts = 0;
+  let buffer = new Uint8Array(0);
+  let pos = 0;
+
+  function fillBuffer(): void {
+    buffer = new Uint8Array(Math.max(length * 2, 64));
+    crypto.getRandomValues(buffer);
+    pos = 0;
+  }
+
+  function nextByte(): number {
+    if (pos >= buffer.length) {
+      fillBuffer();
+    }
+    return buffer[pos++];
+  }
+
   let password = '';
   for (let i = 0; i < length; i++) {
-    password += chars[randomBytes[i] % chars.length];
+    let byte: number;
+    if (attempts < maxAttempts) {
+      do {
+        byte = nextByte();
+        attempts++;
+      } while (byte >= maxReject && attempts < maxAttempts);
+    } else {
+      // Exhausted our safety budget; fall back to a single biased byte rather
+      // than loop forever. This branch is effectively unreachable in practice.
+      byte = nextByte();
+    }
+    password += chars[byte % chars.length];
   }
   return password;
 }

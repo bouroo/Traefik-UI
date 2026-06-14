@@ -106,6 +106,14 @@ async function checkDatabase(): Promise<{
   }
 }
 
+function withTimeoutMs<T>(p: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('timeout')), ms);
+  });
+  return Promise.race([p, timeout]).finally(() => clearTimeout(timer!));
+}
+
 async function checkTraefik(): Promise<{
   status: 'ok' | 'error' | 'unreachable';
   latencyMs: number;
@@ -114,23 +122,12 @@ async function checkTraefik(): Promise<{
 }> {
   const start = performance.now();
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    try {
-      const version = await Promise.race([
-        getVersion(),
-        new Promise<null>((_, reject) => {
-          controller.signal.addEventListener('abort', () => reject(new Error('timeout')));
-        }),
-      ]);
-      const latencyMs = Math.round(performance.now() - start);
-      if (!version) {
-        return { status: 'unreachable', latencyMs };
-      }
-      return { status: 'ok', latencyMs, version: version.version };
-    } finally {
-      clearTimeout(timeoutId);
+    const version = await withTimeoutMs(getVersion(), 2000);
+    const latencyMs = Math.round(performance.now() - start);
+    if (!version) {
+      return { status: 'unreachable', latencyMs };
     }
+    return { status: 'ok', latencyMs, version: version.version };
   } catch (err) {
     return {
       status: 'unreachable',

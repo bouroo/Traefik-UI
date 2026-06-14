@@ -49,8 +49,12 @@ async function fetchTraefik<T>(path: string): Promise<T | null> {
     headers['Authorization'] = `Basic ${credentials}`;
   }
 
+  const controller = new AbortController();
+  const timeoutMs = config.traefik.requestTimeoutMs;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const response = await fetch(url, { headers });
+    const response = await fetch(url, { headers, signal: controller.signal });
 
     if (!response.ok) {
       logError(`Traefik API error: ${response.status} ${response.statusText} for ${path}`);
@@ -66,11 +70,17 @@ async function fetchTraefik<T>(path: string): Promise<T | null> {
     }
     return data;
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      logError(`Traefik API request timed out after ${timeoutMs}ms for ${path}`);
+      return null;
+    }
     logError(
       `Traefik API fetch failed for ${path}:`,
       error instanceof Error ? error.message : String(error)
     );
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

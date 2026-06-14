@@ -2,7 +2,17 @@ import { config } from '../config';
 
 const ENCODER = new TextEncoder();
 
-async function getKey(): Promise<CryptoKey> {
+let cachedKeyPromise: Promise<CryptoKey> | undefined;
+
+/**
+ * Reset the cached AES-GCM CryptoKey derivation promise.
+ * @internal Exported only for tests that mutate ENCRYPTION_KEY between runs.
+ */
+export function _resetCryptoKeyCache(): void {
+  cachedKeyPromise = undefined;
+}
+
+async function deriveKey(): Promise<CryptoKey> {
   const keyBuffer = await crypto.subtle.digest(
     'SHA-256',
     ENCODER.encode(config.auth.encryptionKey)
@@ -11,6 +21,13 @@ async function getKey(): Promise<CryptoKey> {
     'encrypt',
     'decrypt',
   ]);
+}
+
+async function getKey(): Promise<CryptoKey> {
+  if (!cachedKeyPromise) {
+    cachedKeyPromise = deriveKey();
+  }
+  return cachedKeyPromise;
 }
 
 export async function encryptSecret(plaintext: string): Promise<string> {
