@@ -22,9 +22,6 @@ packages/backend/src/
 │   ├── dashboard.ts      # Dashboard stats & health
 │   ├── overview.ts       # Traefik overview, raw data, version
 │   ├── resources.ts      # Registry-driven generic resource router (routers/services/middlewares for all protocols)
-│   ├── routers.ts        # Legacy router endpoints (HTTP, TCP, UDP) — not registered in app.ts
-│   ├── services.ts       # Legacy service endpoints (HTTP, TCP, UDP) — not registered in app.ts
-│   ├── middlewares.ts    # Legacy middleware endpoints (HTTP, TCP) — not registered in app.ts
 │   ├── tls.ts            # TLS certificates and options
 │   ├── logs.ts           # Access and error log endpoints
 │   ├── logs-parser.ts    # CLF and JSON log parsing utilities + filtering
@@ -43,7 +40,7 @@ packages/backend/src/
 │   └── registry.ts       # Protocol/resource registry (PROTOCOLS, RESOURCE_TYPES, associated resources)
 ├── db/
 │   ├── index.ts          # Database singleton (getDb, closeDb, resetDb), WAL mode, migration runner
-│   ├── schema.ts         # Base schema (users, settings, api_keys), random admin password on first run, assignAdminRoles
+│   ├── schema.ts         # Base schema (users, settings, api_keys), env-driven first-run admin bootstrap (ADMIN_USERNAME/ADMIN_PASSWORD), assignAdminRoles
 │   └── migrations/
 │       ├── runner.ts     # Sequential SQL migration runner with tracking table
 │       ├── 002_rbac_schema.sql  # roles, permissions, groups, user_groups, group_roles, user_roles, identity_providers, audit_logs
@@ -96,11 +93,9 @@ packages/frontend/src/
 ### Architecture
 - **Registry-driven**: `src/traefik/registry.ts` defines all protocols (HTTP, TCP, UDP) and resource types (routers, services, middlewares). The generic client and API routes derive from this registry.
 - **Adding a new protocol**: Add one entry to `PROTOCOLS` in registry.ts — no other code changes needed.
-- **Legacy route files**: `routers.ts`, `services.ts`, `middlewares.ts` in `src/api/` are NOT registered in `app.ts`. The registry-driven `resources.ts` handles all resource routes.
-
 ### Auth Pattern
 - **Local auth**: JWT Bearer token (`Authorization: Bearer <token>`), argon2id passwords, `is_admin` flag on users table
-- **First-run**: Random admin password generated (12 chars), printed to logs, saved to `admin-credentials.txt` in data directory
+- **First-run**: Admin provisioned from `ADMIN_USERNAME` (default `admin`) and `ADMIN_PASSWORD` env vars. If `ADMIN_PASSWORD` is unset, a random 12-char password is generated and printed once to stdout (never via the structured logger, never written to disk)
 - **SSO**: OIDC via `oauth4webapi` — PKCE flow, auto-provisioning (creates user with `source='oidc'`), IdP admin CRUD at `/api/admin/sso-providers`
 - **RBAC**: Permission-based access control — 19 permissions, 3 built-in roles (super_admin, operator, viewer), user-group-role assignment chain
 - Backend sets `userId` and `username` on Hono context via `authMiddleware`

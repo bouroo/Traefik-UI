@@ -1,7 +1,11 @@
 import { Hono } from 'hono';
 import { getDb } from '../../db';
 import { authMiddleware } from '../../auth/middleware';
-import { requirePermission } from '../../auth/rbac';
+import {
+  requirePermission,
+  invalidateUserPermissions,
+  invalidateAllPermissions,
+} from '../../auth/rbac';
 import { logAudit } from '../../lib/audit';
 
 const users = new Hono();
@@ -165,6 +169,7 @@ users.put('/:id', requirePermission('system.users.write'), async (c) => {
         db.run('INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)', [id, roleId]);
       }
     })();
+    invalidateUserPermissions(id);
   }
 
   logAudit(c, 'user.update', 'user', String(id));
@@ -201,6 +206,7 @@ users.delete('/:id', requirePermission('system.users.write'), async (c) => {
   }
 
   db.run('DELETE FROM users WHERE id = ?', [id]);
+  invalidateAllPermissions();
   logAudit(c, 'user.delete', 'user', String(id));
   return c.json({ success: true });
 });

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { getDb } from '../../db';
 import { authMiddleware } from '../../auth/middleware';
-import { requirePermission } from '../../auth/rbac';
+import { requirePermission, invalidateAllPermissions } from '../../auth/rbac';
 import { logAudit } from '../../lib/audit';
 
 const groups = new Hono();
@@ -116,6 +116,7 @@ groups.post('/', requirePermission('system.users.write'), async (c) => {
         roleId,
       ]);
     }
+    invalidateAllPermissions();
   }
 
   logAudit(c, 'group.create', 'group', String(groupId));
@@ -162,6 +163,7 @@ groups.put('/:id', requirePermission('system.users.write'), async (c) => {
         db.run('INSERT OR IGNORE INTO group_roles (group_id, role_id) VALUES (?, ?)', [id, roleId]);
       }
     })();
+    invalidateAllPermissions();
   }
 
   logAudit(c, 'group.update', 'group', String(id));
@@ -181,6 +183,7 @@ groups.delete('/:id', requirePermission('system.users.write'), async (c) => {
   }
 
   db.run('DELETE FROM groups WHERE id = ?', [id]);
+  invalidateAllPermissions();
   logAudit(c, 'group.delete', 'group', String(id));
   return c.json({ success: true });
 });

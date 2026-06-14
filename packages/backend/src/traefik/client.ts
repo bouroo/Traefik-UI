@@ -20,8 +20,25 @@ export type {
   TraefikRawData,
 } from '@traefik-ui/shared';
 
+interface CachedEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+const traefikCache = new Map<string, CachedEntry<unknown>>();
+
+export function invalidateTraefikCache(): void {
+  traefikCache.clear();
+}
+
 async function fetchTraefik<T>(path: string): Promise<T | null> {
   const url = config.traefik.apiUrl + '/api' + path;
+
+  const now = Date.now();
+  const cached = traefikCache.get(url);
+  if (cached && cached.expiresAt > now) {
+    return cached.data as T;
+  }
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -40,8 +57,14 @@ async function fetchTraefik<T>(path: string): Promise<T | null> {
       return null;
     }
 
-    const data = await response.json();
-    return data as T;
+    const data = (await response.json()) as T;
+    if (data !== null && data !== undefined) {
+      traefikCache.set(url, {
+        data,
+        expiresAt: now + config.traefik.cacheTtlMs,
+      });
+    }
+    return data;
   } catch (error) {
     logError(
       `Traefik API fetch failed for ${path}:`,

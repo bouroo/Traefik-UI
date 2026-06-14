@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { YAML } from 'bun';
 import { config } from '../config';
 import { authMiddleware } from '../auth/middleware';
+import { invalidateTraefikCache } from '../traefik/client';
 import { logError } from '../lib/logger';
 
 class Mutex {
@@ -120,6 +121,7 @@ configCrud.post('/:resourceType', async (c) => {
     section[name] = data;
 
     await writeDynamicConfig(configData);
+    invalidateTraefikCache();
 
     return c.json({
       success: true,
@@ -170,6 +172,7 @@ configCrud.delete('/:resourceType/:protocol/:name', async (c) => {
     }
 
     await writeDynamicConfig(configData);
+    invalidateTraefikCache();
 
     return c.json({
       success: true,

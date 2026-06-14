@@ -59,7 +59,7 @@ if (config.logLevel !== 'silent') {
   app.use('*', logger());
 }
 
-const rateLimitDisabled = Bun.env.RATE_LIMIT_DISABLED === 'true' || Bun.env.NODE_ENV === 'test';
+const rateLimitDisabled = config.rateLimit.disabled;
 
 // Strict rate limit on login (10 req/min per IP)
 app.use('/api/auth/login', rateLimit({ windowMs: 60_000, max: 10, disabled: rateLimitDisabled }));
