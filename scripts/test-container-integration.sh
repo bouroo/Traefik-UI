@@ -37,6 +37,21 @@ fi
 echo "Using container runtime: $RUNTIME"
 echo ""
 
+# ---- Start podman service socket (for compose compatibility) ------------
+# `podman compose` may delegate to a docker-compose-compatible provider that
+# requires a running Docker-compatible socket. Start podman's service API on
+# a unix socket and point DOCKER_HOST at it so the compose provider can reach
+# podman. (No-op for docker, whose daemon is already running.)
+if [ "$RUNTIME" = "podman" ]; then
+  export PODMAN_SOCKET="unix:///tmp/podman-traefik-ui.sock"
+  rm -f /tmp/podman-traefik-ui.sock
+  podman system service --time=0 "$PODMAN_SOCKET" &
+  PODMAN_SERVICE_PID=$!
+  export DOCKER_HOST="$PODMAN_SOCKET"
+  # Give the socket a moment to come up.
+  sleep 1
+fi
+
 # Use a test-specific compose overlay so the database starts fresh
 # (ephemeral named volume). This guarantees first-run admin password
 # generation every time the test runs.
@@ -48,6 +63,9 @@ cleanup() {
   echo ""
   echo "--- Cleaning up stack (down -v) ---"
   $RUNTIME compose $COMPOSE_FILES down -v --remove-orphans &> /dev/null || true
+  if [ -n "${PODMAN_SERVICE_PID:-}" ]; then
+    kill "$PODMAN_SERVICE_PID" >/dev/null 2>&1 || true
+  fi
   if [ $exit_code -eq 0 ]; then
     echo "=== PASS: container integration tests ==="
   else

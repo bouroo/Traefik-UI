@@ -61,14 +61,24 @@ if (config.logLevel !== 'silent') {
 
 const rateLimitDisabled = config.rateLimit.disabled;
 
-// Strict rate limit on login (10 req/min per IP)
-app.use('/api/auth/login', rateLimit({ windowMs: 60_000, max: 10, disabled: rateLimitDisabled }));
+// One limiter instance per tier; each keeps its own buckets/timer.
+// A single dispatcher selects exactly one tier per request so that
+// overlapping wildcard paths do not cause a request to consume slots
+// in multiple buckets or overwrite the stricter limiter's headers.
+const loginLimiter = rateLimit({ windowMs: 60_000, max: 10, disabled: rateLimitDisabled });
+const authLimiter = rateLimit({ windowMs: 60_000, max: 20, disabled: rateLimitDisabled });
+const generalLimiter = rateLimit({ windowMs: 60_000, max: 100, disabled: rateLimitDisabled });
 
-// Looser rate limit on other auth routes (20 req/min per IP)
-app.use('/api/auth/*', rateLimit({ windowMs: 60_000, max: 20, disabled: rateLimitDisabled }));
-
-// General rate limit for all other API routes (100 req/min per IP)
-app.use('/api/*', rateLimit({ windowMs: 60_000, max: 100, disabled: rateLimitDisabled }));
+app.use('/api/*', async (c, next) => {
+  const path = c.req.path;
+  if (path === '/api/auth/login' || path.startsWith('/api/auth/login/')) {
+    return loginLimiter(c, next);
+  }
+  if (path.startsWith('/api/auth/')) {
+    return authLimiter(c, next);
+  }
+  return generalLimiter(c, next);
+});
 
 app.route('/api/auth', auth);
 app.route('/api/auth/sso', sso);

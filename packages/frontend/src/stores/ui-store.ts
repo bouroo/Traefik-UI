@@ -17,7 +17,7 @@ function getInitialTheme(): Theme {
   const initial: Theme =
     stored === 'light' || stored === 'dark'
       ? stored
-      : window.matchMedia?.('(prefers-color-scheme: dark)').matches
+      : window.matchMedia?.('(prefers-color-scheme: dark)')?.matches
         ? 'dark'
         : 'light';
   if (initial === 'dark') {
