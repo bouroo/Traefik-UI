@@ -1,0 +1,26 @@
+# Test overlay for container integration tests.
+# Ensures a fresh database on every run (first-run admin password generation).
+# Usage:
+#   podman compose -f compose.yml -f compose.test.yml up -d
+services:
+  traefik-ui:
+    image: traefik-ui:test
+    build:
+      dockerfile: Containerfile
+    volumes:
+      # Ephemeral named volume — fresh DB on every test run.
+      - test-ui-data:/app/data
+      - ./data/traefik/logs:/var/log/traefik:ro
+      - ./data/traefik/acme.json:/etc/traefik/acme.json:ro
+      - ./data/traefik/dynamic.yml:/etc/traefik/dynamic.yml
+  # Rootless podman cannot bind host ports < 1024. The integration test only
+  # reaches traefik-ui on :3000 and talks to traefik-proxy over the compose
+  # network, so host ports 80/443 are unused — remap them to unprivileged ones.
+  traefik-proxy:
+    ports: !override
+      - '8081:80'
+      - '8444:443'
+      - '8080:8080'
+
+volumes:
+  test-ui-data:

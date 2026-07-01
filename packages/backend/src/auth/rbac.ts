@@ -1,7 +1,23 @@
 import type { Context, Next } from 'hono';
 import { getDb } from '../db';
+import { config } from '../config';
 
-export function getUserPermissions(userId: number): string[] {
+interface CachedPerms {
+  perms: string[];
+  expiresAt: number;
+}
+
+const permCache = new Map<number, CachedPerms>();
+
+export function invalidateUserPermissions(userId: number): void {
+  permCache.delete(userId);
+}
+
+export function invalidateAllPermissions(): void {
+  permCache.clear();
+}
+
+function loadPermsFromDb(userId: number): string[] {
   const db = getDb();
   const rows = db
     .query(
@@ -21,6 +37,25 @@ export function getUserPermissions(userId: number): string[] {
     .all(userId, userId) as { name: string }[];
 
   return rows.map((r) => r.name);
+}
+
+export function getUserPermissions(userId: number): string[] {
+  if (!config.rbac.permissionCacheEnabled) {
+    return loadPermsFromDb(userId);
+  }
+
+  const now = Date.now();
+  const cached = permCache.get(userId);
+  if (cached && cached.expiresAt > now) {
+    return cached.perms;
+  }
+
+  const perms = loadPermsFromDb(userId);
+  permCache.set(userId, {
+    perms,
+    expiresAt: now + config.rbac.permissionCacheTtlMs,
+  });
+  return perms;
 }
 
 export function hasPermission(userId: number, permission: string): boolean {
@@ -54,6 +89,8 @@ export function requireResourcePermission(paramName: string) {
     if (!resourceType) {
       return c.json({ error: 'Bad Request' }, 400);
     }
+    // Permission mapping is an RBAC concern (permission names), intentionally
+    // separate from the Traefik protocol/resource registry.
     const map: Record<string, string> = {
       routers: 'traefik.routers.read',
       services: 'traefik.services.read',

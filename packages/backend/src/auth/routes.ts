@@ -3,6 +3,8 @@ import { config } from '../config';
 import { getDb } from '../db';
 import { authMiddleware, generateToken } from './middleware';
 import { getUserPermissions } from './rbac';
+import { validateBody } from '../middleware/validate';
+import type { ValidationSchema } from '../middleware/validate';
 
 const auth = new Hono();
 
@@ -15,6 +17,16 @@ interface ChangePasswordBody {
   currentPassword: string;
   newPassword: string;
 }
+
+const loginSchema: ValidationSchema = {
+  username: { type: 'string', required: true, minLength: 1 },
+  password: { type: 'string', required: true, minLength: 1 },
+};
+
+const changePasswordSchema: ValidationSchema = {
+  currentPassword: { type: 'string', required: true },
+  newPassword: { type: 'string', required: true, minLength: 6 },
+};
 
 interface User {
   id: number;
@@ -33,20 +45,9 @@ interface User {
 // Validates credentials against SQLite users table
 // Returns { token: string, user: { id, username } } on success
 // Returns 401 on invalid credentials
-auth.post('/login', async (c) => {
-  let body: LoginBody;
-
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: 'Invalid request body' }, 400);
-  }
-
+auth.post('/login', validateBody(loginSchema), async (c) => {
+  const body = c.get('parsedBody') as LoginBody;
   const { username, password } = body;
-
-  if (!username || !password) {
-    return c.json({ error: 'Username and password are required' }, 400);
-  }
 
   const db = getDb();
   const user = db.query('SELECT * FROM users WHERE username = ?').get(username) as User | undefined;
@@ -111,25 +112,10 @@ auth.get('/me', authMiddleware, async (c) => {
 // Protected: requires authMiddleware
 // Body: { currentPassword: string, newPassword: string }
 // Validates current password, updates to new (argon2id hashed)
-auth.post('/change-password', authMiddleware, async (c) => {
+auth.post('/change-password', authMiddleware, validateBody(changePasswordSchema), async (c) => {
   const userId = c.get('userId');
-  let body: ChangePasswordBody;
-
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: 'Invalid request body' }, 400);
-  }
-
+  const body = c.get('parsedBody') as ChangePasswordBody;
   const { currentPassword, newPassword } = body;
-
-  if (!currentPassword || !newPassword) {
-    return c.json({ error: 'Current password and new password are required' }, 400);
-  }
-
-  if (newPassword.length < 6) {
-    return c.json({ error: 'New password must be at least 6 characters' }, 400);
-  }
 
   const db = getDb();
   const user = db.query('SELECT * FROM users WHERE id = ?').get(userId) as User | undefined;

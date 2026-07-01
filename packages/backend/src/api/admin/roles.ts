@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { getDb } from '../../db';
 import { authMiddleware } from '../../auth/middleware';
-import { requirePermission } from '../../auth/rbac';
+import { requirePermission, invalidateAllPermissions } from '../../auth/rbac';
 import { logAudit } from '../../lib/audit';
 
 const BUILT_IN_ROLES = ['super_admin', 'operator', 'viewer'];
@@ -125,6 +125,8 @@ roles.post('/', requirePermission('system.roles.write'), async (c) => {
     ]);
   }
 
+  invalidateAllPermissions();
+
   logAudit(c, 'role.create', 'role', String(roleId));
   return c.json({ id: roleId, name: body.name }, 201);
 });
@@ -184,6 +186,7 @@ roles.put('/:id', requirePermission('system.roles.write'), async (c) => {
         ]);
       }
     })();
+    invalidateAllPermissions();
   }
 
   logAudit(c, 'role.update', 'role', String(id));
@@ -213,6 +216,7 @@ roles.delete('/:id', requirePermission('system.roles.write'), async (c) => {
   }
 
   db.run('DELETE FROM roles WHERE id = ?', [id]);
+  invalidateAllPermissions();
   logAudit(c, 'role.delete', 'role', String(id));
   return c.json({ success: true });
 });

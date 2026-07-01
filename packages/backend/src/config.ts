@@ -17,10 +17,33 @@ export const config = {
     get password() {
       return Bun.env.TRAEFIK_API_PASSWORD || '';
     },
+    // TTL (ms) for in-process cache of upstream Traefik API GET responses.
+    // Short default: Traefik config can change at any time via dynamic config.
+    get cacheTtlMs() {
+      return parseInt(Bun.env.TRAEFIK_CACHE_TTL_MS || '2000');
+    },
+    // Request timeout (ms) for upstream Traefik API calls.
+    get requestTimeoutMs() {
+      return parseInt(Bun.env.TRAEFIK_REQUEST_TIMEOUT_MS || '5000');
+    },
+  },
+
+  rbac: {
+    // TTL (ms) for in-process permission cache (Map<userId, perms>).
+    get permissionCacheTtlMs() {
+      return parseInt(Bun.env.PERMISSION_CACHE_TTL_MS || '60000');
+    },
+    // Master switch — set PERMISSION_CACHE_ENABLED=false to bypass cache (tests).
+    get permissionCacheEnabled() {
+      const v = Bun.env.PERMISSION_CACHE_ENABLED;
+      return v === undefined || v === '' ? true : v !== 'false';
+    },
   },
 
   db: {
-    path: Bun.env.DB_PATH || './data/traefik-ui.db',
+    get path() {
+      return Bun.env.DB_PATH || './data/traefik-ui.db';
+    },
   },
 
   auth: {
@@ -46,6 +69,38 @@ export const config = {
     origin: Bun.env.CORS_ORIGIN || '*',
   },
 
+  // Security
+  security: {
+    hsts: Bun.env.HSTS_ENABLED === 'true',
+  },
+
   // Logging
-  logLevel: Bun.env.LOG_LEVEL || 'info',
+  get logLevel(): string {
+    return Bun.env.LOG_LEVEL || 'info';
+  },
+
+  // Node environment (read at access time so tests can mutate)
+  get nodeEnv(): string {
+    return Bun.env.NODE_ENV || 'development';
+  },
+  get isTest(): boolean {
+    return this.nodeEnv === 'test';
+  },
+
+  // Rate limiting
+  rateLimit: {
+    get disabled() {
+      return Bun.env.RATE_LIMIT_DISABLED === 'true' || Bun.env.NODE_ENV === 'test';
+    },
+  },
+
+  // First-run bootstrap (env-driven admin provisioning)
+  bootstrap: {
+    get adminUsername() {
+      return Bun.env.ADMIN_USERNAME || 'admin';
+    },
+    get adminPassword() {
+      return Bun.env.ADMIN_PASSWORD || '';
+    },
+  },
 };

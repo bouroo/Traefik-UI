@@ -20,6 +20,7 @@ try {
   skipTests = true;
 }
 
+const ORIGINAL_TRAEFIK_API_URL = process.env.TRAEFIK_API_URL;
 let containerId = '';
 let apiUrl = '';
 
@@ -41,6 +42,9 @@ afterAll(() => {
   if (containerId) {
     stopTraefikContainer(containerId);
   }
+  // Restore env so we don't poison other test files sharing this process.
+  if (ORIGINAL_TRAEFIK_API_URL === undefined) delete process.env.TRAEFIK_API_URL;
+  else process.env.TRAEFIK_API_URL = ORIGINAL_TRAEFIK_API_URL;
 });
 
 async function authGet(path: string): Promise<Response> {

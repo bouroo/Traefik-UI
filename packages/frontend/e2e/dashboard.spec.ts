@@ -43,7 +43,7 @@ test.describe('Dashboard', () => {
     await expect(routersLink).toBeVisible();
     await routersLink.click();
     await expect(page).toHaveURL('/routers');
-    await expect(page.getByRole('heading', { name: 'Routers' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Routers', exact: true })).toBeVisible();
   });
 
   test('clicking Services nav item navigates to /services', async ({ page }) => {

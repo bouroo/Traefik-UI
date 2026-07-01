@@ -20,8 +20,25 @@ export type {
   TraefikRawData,
 } from '@traefik-ui/shared';
 
+interface CachedEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+const traefikCache = new Map<string, CachedEntry<unknown>>();
+
+export function invalidateTraefikCache(): void {
+  traefikCache.clear();
+}
+
 async function fetchTraefik<T>(path: string): Promise<T | null> {
   const url = config.traefik.apiUrl + '/api' + path;
+
+  const now = Date.now();
+  const cached = traefikCache.get(url);
+  if (cached && cached.expiresAt > now) {
+    return cached.data as T;
+  }
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -32,22 +49,38 @@ async function fetchTraefik<T>(path: string): Promise<T | null> {
     headers['Authorization'] = `Basic ${credentials}`;
   }
 
+  const controller = new AbortController();
+  const timeoutMs = config.traefik.requestTimeoutMs;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const response = await fetch(url, { headers });
+    const response = await fetch(url, { headers, signal: controller.signal });
 
     if (!response.ok) {
       logError(`Traefik API error: ${response.status} ${response.statusText} for ${path}`);
       return null;
     }
 
-    const data = await response.json();
-    return data as T;
+    const data = (await response.json()) as T;
+    if (data !== null && data !== undefined) {
+      traefikCache.set(url, {
+        data,
+        expiresAt: now + config.traefik.cacheTtlMs,
+      });
+    }
+    return data;
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      logError(`Traefik API request timed out after ${timeoutMs}ms for ${path}`);
+      return null;
+    }
     logError(
       `Traefik API fetch failed for ${path}:`,
       error instanceof Error ? error.message : String(error)
     );
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

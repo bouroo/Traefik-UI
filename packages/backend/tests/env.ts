@@ -10,3 +10,5 @@ process.env.CORS_ORIGIN = '*';
 // ACME and access log paths — empty for tests (no file access)
 process.env.ACME_JSON_PATH = '';
 process.env.ACCESS_LOG_PATH = '';
+// Rate limiting disabled for unit tests (high request counts would trip the limiter)
+process.env.RATE_LIMIT_DISABLED = 'true';

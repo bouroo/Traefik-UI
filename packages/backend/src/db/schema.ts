@@ -1,15 +1,45 @@
 import { Database } from 'bun:sqlite';
-import * as path from 'node:path';
 import { config } from '../config';
-import { logInfo, logError } from '../lib/logger';
+import { logInfo } from '../lib/logger';
 
-function generateRandomPassword(length: number = 12): string {
+export function generateRandomPassword(length: number = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
-  const randomBytes = new Uint8Array(length);
-  crypto.getRandomValues(randomBytes);
+  const maxReject = 256 - (256 % chars.length); // 236; values >= this are discarded
+  // Rejection region is 20/256 ≈ 7.8% per byte. Exhausting 32 attempts per
+  // character has probability < 10^-35, so the biased fallback is unreachable
+  // in practice while still keeping the loop bounded forever.
+  const maxAttempts = length * 32;
+  let attempts = 0;
+  let buffer = new Uint8Array(0);
+  let pos = 0;
+
+  function fillBuffer(): void {
+    buffer = new Uint8Array(Math.max(length * 2, 64));
+    crypto.getRandomValues(buffer);
+    pos = 0;
+  }
+
+  function nextByte(): number {
+    if (pos >= buffer.length) {
+      fillBuffer();
+    }
+    return buffer[pos++];
+  }
+
   let password = '';
   for (let i = 0; i < length; i++) {
-    password += chars[randomBytes[i] % chars.length];
+    let byte: number;
+    if (attempts < maxAttempts) {
+      do {
+        byte = nextByte();
+        attempts++;
+      } while (byte >= maxReject && attempts < maxAttempts);
+    } else {
+      // Exhausted our safety budget; fall back to a single biased byte rather
+      // than loop forever. This branch is effectively unreachable in practice.
+      byte = nextByte();
+    }
+    password += chars[byte % chars.length];
   }
   return password;
 }
@@ -72,33 +102,42 @@ export async function initDb(db: Database): Promise<void> {
   // Insert default admin user if users table is empty
   const userCount = db.query(`SELECT COUNT(*) as count FROM users`).get() as { count: number };
   if (userCount.count === 0) {
-    const tempPassword = generateRandomPassword(12);
+    const adminUsername = config.bootstrap.adminUsername;
+    const envPassword = config.bootstrap.adminPassword;
+    const useEnvPassword = envPassword.length > 0;
+
+    const tempPassword = useEnvPassword ? envPassword : generateRandomPassword(12);
     // Hash with argon2id via Bun's built-in password hashing
     const passwordHash = Bun.password.hashSync(tempPassword, {
       algorithm: 'argon2id',
-      timeCost: 3,
-      memoryCost: 65536,
+      timeCost: config.auth.argon2.timeCost,
+      memoryCost: config.auth.argon2.memoryCost,
     });
 
     db.run(`INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)`, [
-      'admin',
+      adminUsername,
       passwordHash,
     ]);
 
-    logInfo('First run: Default admin user created');
-    logInfo(`Username: admin, Password: ${tempPassword}`);
-    logInfo('Please change the password after first login');
-
-    try {
-      const rawDir = path.dirname(config.db.path);
-      const credsDir = rawDir === '.' ? './data' : rawDir;
-      const credsPath = path.join(credsDir, 'admin-credentials.txt');
-      await Bun.write(credsPath, `Username: admin\nPassword: ${tempPassword}\n`);
-      logInfo(`Credentials saved to: ${credsPath}`);
-    } catch (err) {
-      logError(
-        `Could not save credentials to file: ${err instanceof Error ? err.message : String(err)}`
-      );
+    if (useEnvPassword) {
+      logInfo('First run: Default admin user created');
+      logInfo('Admin password sourced from ADMIN_PASSWORD env var');
+    } else {
+      // Print generated password directly to stdout (bypasses structured logger)
+      // so it is NOT shipped to log aggregators. This is the one and only place
+      // the bootstrap secret is exposed to the operator.
+      console.log('');
+      console.log('============================================================');
+      console.log(' Traefik-UI — first-run admin bootstrap');
+      console.log('============================================================');
+      console.log(` Username:  ${adminUsername}`);
+      console.log(` Password:  ${tempPassword}`);
+      console.log('');
+      console.log(' Change this password after first login.');
+      console.log(' To provision a deterministic admin, set ADMIN_USERNAME and');
+      console.log(' ADMIN_PASSWORD environment variables before first start.');
+      console.log('============================================================');
+      console.log('');
     }
   }
 }

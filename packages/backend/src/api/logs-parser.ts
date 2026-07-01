@@ -61,17 +61,17 @@ export function parseJSONLine(line: string): AccessLogLine | null {
   try {
     const obj = JSON.parse(line);
     return {
-      timestamp: obj.time || obj.Timestamp || new Date().toISOString(),
-      method: obj.method || obj.RequestMethod || 'UNKNOWN',
-      path: obj.path || obj.RequestPath || obj.url || '/',
-      protocol: obj.protocol || obj.RequestProtocol || '',
-      status: parseInt(obj.status || obj.ResponseStatus || 0, 10),
-      bodyBytesSent: parseInt(obj.size || obj.BodyBytesSent || 0, 10),
-      requestTime: parseFloat(obj.duration || obj.RequestDuration || obj.request_time || 0),
-      remoteAddr: obj.client_ip || obj.RemoteAddr || obj.clientAddr || '',
-      remoteUser: obj.user || obj.remoteUser || '',
-      httpReferer: obj.referer || obj.httpReferer || '',
-      httpUserAgent: obj.ua || obj.user_agent || obj.httpUserAgent || '',
+      timestamp: obj.time ?? obj.Timestamp ?? new Date().toISOString(),
+      method: obj.method ?? obj.RequestMethod ?? 'UNKNOWN',
+      path: obj.path ?? obj.RequestPath ?? obj.url ?? '/',
+      protocol: obj.protocol ?? obj.RequestProtocol ?? '',
+      status: parseInt(obj.status ?? obj.ResponseStatus ?? 0, 10),
+      bodyBytesSent: parseInt(obj.size ?? obj.BodyBytesSent ?? 0, 10),
+      requestTime: parseFloat(obj.duration ?? obj.RequestDuration ?? obj.request_time ?? 0),
+      remoteAddr: obj.client_ip ?? obj.RemoteAddr ?? obj.clientAddr ?? '',
+      remoteUser: obj.user ?? obj.remoteUser ?? '',
+      httpReferer: obj.referer ?? obj.httpReferer ?? '',
+      httpUserAgent: obj.ua ?? obj.user_agent ?? obj.httpUserAgent ?? '',
       raw: line,
     };
   } catch {

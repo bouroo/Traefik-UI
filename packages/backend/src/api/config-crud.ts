@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { YAML } from 'bun';
 import { config } from '../config';
 import { authMiddleware } from '../auth/middleware';
+import { invalidateTraefikCache } from '../traefik/client';
+import { isValidProtocol, isValidResourceType, VALID_PROTOCOLS } from '../traefik/registry';
 import { logError } from '../lib/logger';
 
 class Mutex {
@@ -76,7 +78,7 @@ configCrud.post('/:resourceType', async (c) => {
   const resourceType = c.req.param('resourceType') as string;
 
   // Validate resource type
-  if (!['routers', 'services', 'middlewares'].includes(resourceType)) {
+  if (!isValidResourceType(resourceType)) {
     return c.json(
       { error: `Invalid resource type: ${resourceType}. Valid: routers, services, middlewares` },
       400
@@ -97,7 +99,26 @@ configCrud.post('/:resourceType', async (c) => {
     return c.json({ error: 'Missing required fields: protocol, name, data' }, 400);
   }
 
-  if (!['http', 'tcp', 'udp'].includes(protocol)) {
+  if (typeof name !== 'string' || typeof protocol !== 'string') {
+    return c.json({ error: 'Fields "name" and "protocol" must be strings' }, 400);
+  }
+
+  if (
+    !/^[a-zA-Z0-9-_]+$/.test(name) ||
+    name === '__proto__' ||
+    name === 'constructor' ||
+    name === 'prototype'
+  ) {
+    return c.json(
+      {
+        error:
+          'Invalid resource name. Only alphanumeric characters, dashes, and underscores are allowed.',
+      },
+      400
+    );
+  }
+
+  if (!isValidProtocol(protocol)) {
     return c.json({ error: `Invalid protocol: ${protocol}` }, 400);
   }
 
@@ -120,6 +141,7 @@ configCrud.post('/:resourceType', async (c) => {
     section[name] = data;
 
     await writeDynamicConfig(configData);
+    invalidateTraefikCache();
 
     return c.json({
       success: true,
@@ -139,7 +161,7 @@ configCrud.delete('/:resourceType/:protocol/:name', async (c) => {
   const rawName = c.req.param('name') as string;
   const name = stripProviderSuffix(rawName);
 
-  if (!['routers', 'services', 'middlewares'].includes(resourceType)) {
+  if (!isValidResourceType(resourceType)) {
     return c.json({ error: `Invalid resource type: ${resourceType}` }, 400);
   }
 
@@ -170,6 +192,7 @@ configCrud.delete('/:resourceType/:protocol/:name', async (c) => {
     }
 
     await writeDynamicConfig(configData);
+    invalidateTraefikCache();
 
     return c.json({
       success: true,
@@ -189,7 +212,7 @@ configCrud.get('/:resourceType', async (c) => {
   const resourceType = c.req.param('resourceType') as string;
   const protocol = c.req.query('protocol');
 
-  if (!['routers', 'services', 'middlewares'].includes(resourceType)) {
+  if (!isValidResourceType(resourceType)) {
     return c.json({ error: `Invalid resource type: ${resourceType}` }, 400);
   }
 
@@ -203,7 +226,7 @@ configCrud.get('/:resourceType', async (c) => {
 
     // Return all protocols
     const result: Record<string, unknown> = {};
-    for (const p of ['http', 'tcp', 'udp']) {
+    for (const p of VALID_PROTOCOLS) {
       const section = (configData[p] as Record<string, unknown>)?.[resourceType];
       if (section) {
         result[p] = section;

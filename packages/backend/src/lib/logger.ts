@@ -1,3 +1,5 @@
+import { config } from '../config';
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 const LOG_LEVELS: Record<LogLevel, number> = {
@@ -17,7 +19,7 @@ function resolveLogLevel(env?: string): LogLevel {
   return 'info';
 }
 
-let currentLevel: LogLevel = resolveLogLevel(Bun.env.LOG_LEVEL);
+let currentLevel: LogLevel = resolveLogLevel(config.logLevel);
 
 function shouldLog(level: LogLevel): boolean {
   return LOG_LEVELS[level] >= LOG_LEVELS[currentLevel];

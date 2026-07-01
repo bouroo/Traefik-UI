@@ -14,8 +14,16 @@ const THEME_KEY = 'traefik_ui_theme';
 
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem(THEME_KEY);
-  if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const initial: Theme =
+    stored === 'light' || stored === 'dark'
+      ? stored
+      : window.matchMedia?.('(prefers-color-scheme: dark)')?.matches
+        ? 'dark'
+        : 'light';
+  if (initial === 'dark') {
+    document.documentElement.classList.add('dark');
+  }
+  return initial;
 }
 
 export const useUiStore = create<UiState>((set) => ({

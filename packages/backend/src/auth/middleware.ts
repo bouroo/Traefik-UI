@@ -7,6 +7,7 @@ declare module 'hono' {
   interface ContextVariableMap {
     userId: number;
     username: string;
+    parsedBody: unknown;
   }
 }
 

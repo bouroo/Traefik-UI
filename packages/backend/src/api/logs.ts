@@ -19,22 +19,25 @@ export type { AccessLogLine } from './logs-parser';
 
 const AVG_LINE_LENGTH = 256;
 
-async function countFileLines(filePath: string): Promise<number> {
-  const file = Bun.file(filePath);
-  const stats = await file.stat();
-  const fileSize = stats.size;
-  if (fileSize === 0) return 0;
+function countNewlines(bytes: Uint8Array): number {
+  let count = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    if (bytes[i] === 0x0a) count++;
+  }
+  return count;
+}
+
+async function countPrefixLines(file: Bun.BunFile, startPos: number): Promise<number> {
+  if (startPos <= 0) return 0;
 
   const CHUNK_SIZE = 1024 * 1024;
   let count = 0;
   let pos = 0;
 
-  while (pos < fileSize) {
-    const end = Math.min(pos + CHUNK_SIZE, fileSize);
+  while (pos < startPos) {
+    const end = Math.min(pos + CHUNK_SIZE, startPos);
     const buffer = await file.slice(pos, end).bytes();
-    for (let i = 0; i < buffer.length; i++) {
-      if (buffer[i] === 0x0a) count++;
-    }
+    count += countNewlines(buffer);
     pos = end;
   }
 
@@ -54,17 +57,21 @@ async function readLastLines(
     return { lines: [], totalFileLines: 0 };
   }
 
-  const totalFileLines = await countFileLines(filePath);
-
   const neededLines = totalLines + offset;
 
   let readSize = Math.min(fileSize, neededLines * AVG_LINE_LENGTH + 65536);
 
   let allLines: string[];
+  let tailBytes!: Uint8Array;
+  let tailNewlines!: number;
+  const decoder = new TextDecoder();
+
+  let startPos = Math.max(0, fileSize - readSize);
 
   while (true) {
-    const startPos = Math.max(0, fileSize - readSize);
-    const content = await file.slice(startPos).text();
+    tailBytes = await file.slice(startPos).bytes();
+    tailNewlines = countNewlines(tailBytes);
+    const content = decoder.decode(tailBytes);
     allLines = content.split('\n');
 
     if (startPos > 0) {
@@ -80,12 +87,42 @@ async function readLastLines(
     }
 
     readSize = Math.min(fileSize, readSize * 2);
+    startPos = Math.max(0, fileSize - readSize);
   }
+
+  const totalFileLines = await computeTotalFileLines(
+    startPos,
+    tailNewlines,
+    file,
+    countPrefixLines
+  );
 
   const endIdx = allLines.length - offset;
   const startIdx = Math.max(0, endIdx - totalLines);
 
   return { lines: allLines.slice(startIdx, endIdx), totalFileLines };
+}
+
+async function computeTotalFileLines(
+  startPos: number,
+  tailNewlines: number,
+  file: Bun.BunFile,
+  countPrefix: (file: Bun.BunFile, startPos: number) => Promise<number>
+): Promise<number> {
+  // Whole-file line-count convention:
+  //   - Empty file: 0 lines (handled by the caller before reaching here).
+  //   - Non-empty file: newline count + 1 (the unterminated final line).
+  //
+  // `countPrefix` returns the line count of the [0, startPos) prefix, i.e.
+  // (prefix newlines) + 1 — it already accounts for the prefix's final
+  // unterminated line. Adding the tail's newline count therefore yields
+  // (total newlines) + 1 in BOTH branches, so no extra +1 is needed here:
+  //   - startPos === 0: the tail covers the whole file → tailNewlines + 1.
+  //   - startPos  >  0: (prefix newlines + 1) + tail newlines.
+  if (startPos > 0) {
+    return (await countPrefix(file, startPos)) + tailNewlines;
+  }
+  return tailNewlines + 1;
 }
 
 logs.get('/access', async (c) => {

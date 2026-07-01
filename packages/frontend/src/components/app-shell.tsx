@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -52,6 +52,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout, isAdmin } = useAuth();
   const [adminOpen, setAdminOpen] = useState(false);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') root.classList.add('dark');
+    else root.classList.remove('dark');
+  }, [theme]);
+
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
@@ -59,7 +65,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider>
-      <div className={theme === 'dark' ? 'dark' : ''}>
+      <div>
         <div className="min-h-screen bg-background text-foreground">
           <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center gap-4 border-b bg-background px-4 lg:hidden">
             <Button variant="ghost" size="icon" onClick={toggleSidebar}>
