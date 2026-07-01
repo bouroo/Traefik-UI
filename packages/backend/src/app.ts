@@ -121,6 +121,7 @@ function withTimeoutMs<T>(p: Promise<T>, ms: number): Promise<T> {
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error('timeout')), ms);
   });
+  p.catch(() => {});
   return Promise.race([p, timeout]).finally(() => clearTimeout(timer!));
 }
 

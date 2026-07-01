@@ -115,7 +115,7 @@ describe('config-crud', () => {
     });
 
     it('rejects unsafe resource names with 400', async () => {
-      for (const badName of ['__proto__', 'constructor', 'a/b', 'has space']) {
+      for (const badName of ['__proto__', 'constructor', 'prototype', 'a/b', 'has space']) {
         const res = await postJson('/api/config-crud/routers', {
           protocol: 'http',
           name: badName,
@@ -123,6 +123,20 @@ describe('config-crud', () => {
         });
         expect(res.status).toBe(400);
       }
+    });
+
+    it('rejects array values for name/protocol that bypass string checks (prototype pollution)', async () => {
+      const res = await postJson('/api/config-crud/routers', {
+        protocol: 'http',
+        name: ['__proto__'],
+        data: { foo: 'bar' },
+      });
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toContain('must be strings');
+
+      // Verify no prototype pollution occurred
+      expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     });
 
     it('strips @provider suffix from the resource name', async () => {

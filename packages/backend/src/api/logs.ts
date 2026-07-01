@@ -110,11 +110,15 @@ async function computeTotalFileLines(
   countPrefix: (file: Bun.BunFile, startPos: number) => Promise<number>
 ): Promise<number> {
   // Whole-file line-count convention:
-  //   - Empty file: 0 lines.
+  //   - Empty file: 0 lines (handled by the caller before reaching here).
   //   - Non-empty file: newline count + 1 (the unterminated final line).
-  // If we read from the beginning, the tail already covers the whole file and
-  // we just need to decide whether the file had any content. Otherwise, count
-  // the lines in the skipped prefix and add the tail's newline count.
+  //
+  // `countPrefix` returns the line count of the [0, startPos) prefix, i.e.
+  // (prefix newlines) + 1 — it already accounts for the prefix's final
+  // unterminated line. Adding the tail's newline count therefore yields
+  // (total newlines) + 1 in BOTH branches, so no extra +1 is needed here:
+  //   - startPos === 0: the tail covers the whole file → tailNewlines + 1.
+  //   - startPos  >  0: (prefix newlines + 1) + tail newlines.
   if (startPos > 0) {
     return (await countPrefix(file, startPos)) + tailNewlines;
   }

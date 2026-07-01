@@ -95,6 +95,30 @@ describe('logs route /api/logs/access', () => {
     expect(body.totalLines).toBeGreaterThanOrEqual(1500);
   });
 
+  it('reports a consistent totalLines regardless of read-window size', async () => {
+    const extras: string[] = [];
+    for (let i = 0; i < 2000; i++) {
+      extras.push(
+        `10.0.0.${i % 255} - u [10/Oct/2023:13:55:36 +0000] "GET /big/${i} HTTP/1.1" 200 1 "-" "x" 0.001`
+      );
+    }
+    // 6 base lines + 2000 extras = 2006 content lines; seedLog appends a
+    // trailing newline → 2006 newlines total.
+    seedLog(extras);
+
+    // A small window forces a mid-file read (startPos > 0); a large window
+    // reads from the start (startPos === 0). Both paths must agree.
+    const small = await get('/api/logs/access?lines=50');
+    const large = await get('/api/logs/access?lines=5000');
+    expect(small.status).toBe(200);
+    expect(large.status).toBe(200);
+    const smallBody = (await small.json()) as { totalLines: number };
+    const largeBody = (await large.json()) as { totalLines: number };
+    expect(smallBody.totalLines).toBe(largeBody.totalLines);
+    // Convention: newline count + 1 → 2006 + 1.
+    expect(smallBody.totalLines).toBe(2007);
+  });
+
   it('floors `lines` at 1 (lines=-5 behaves as 1)', async () => {
     seedLog();
     const res = await get('/api/logs/access?lines=-5');

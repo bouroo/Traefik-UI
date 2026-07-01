@@ -99,6 +99,10 @@ configCrud.post('/:resourceType', async (c) => {
     return c.json({ error: 'Missing required fields: protocol, name, data' }, 400);
   }
 
+  if (typeof name !== 'string' || typeof protocol !== 'string') {
+    return c.json({ error: 'Fields "name" and "protocol" must be strings' }, 400);
+  }
+
   if (
     !/^[a-zA-Z0-9-_]+$/.test(name) ||
     name === '__proto__' ||

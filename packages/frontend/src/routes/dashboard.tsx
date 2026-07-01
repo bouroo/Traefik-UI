@@ -139,14 +139,14 @@ export function DashboardPage() {
   const version = data?.version || { version: '', codename: '', uptime: '' };
   const entrypoints = data?.entrypoints || [];
 
-  const httpRouters = overview?.http.routers.total ?? 0;
-  const httpServices = overview?.http.services.total ?? 0;
-  const httpMiddlewares = overview?.http.middlewares.total ?? 0;
-  const tcpRouters = overview?.tcp.routers.total ?? 0;
-  const tcpServices = overview?.tcp.services.total ?? 0;
-  const tcpMiddlewares = overview?.tcp.middlewares.total ?? 0;
-  const udpRouters = overview?.udp.routers.total ?? 0;
-  const udpServices = overview?.udp.services.total ?? 0;
+  const httpRouters = overview?.http?.routers?.total ?? 0;
+  const httpServices = overview?.http?.services?.total ?? 0;
+  const httpMiddlewares = overview?.http?.middlewares?.total ?? 0;
+  const tcpRouters = overview?.tcp?.routers?.total ?? 0;
+  const tcpServices = overview?.tcp?.services?.total ?? 0;
+  const tcpMiddlewares = overview?.tcp?.middlewares?.total ?? 0;
+  const udpRouters = overview?.udp?.routers?.total ?? 0;
+  const udpServices = overview?.udp?.services?.total ?? 0;
   const providers = overview?.providers ?? [];
 
   const totalRouters = httpRouters + tcpRouters + udpRouters;
