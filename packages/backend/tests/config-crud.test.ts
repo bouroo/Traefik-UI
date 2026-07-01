@@ -114,6 +114,17 @@ describe('config-crud', () => {
       expect(r3.status).toBe(400);
     });
 
+    it('rejects unsafe resource names with 400', async () => {
+      for (const badName of ['__proto__', 'constructor', 'a/b', 'has space']) {
+        const res = await postJson('/api/config-crud/routers', {
+          protocol: 'http',
+          name: badName,
+          data: { foo: 'bar' },
+        });
+        expect(res.status).toBe(400);
+      }
+    });
+
     it('strips @provider suffix from the resource name', async () => {
       const res = await postJson('/api/config-crud/services', {
         protocol: 'http',

@@ -52,7 +52,6 @@ const shutdown = (signal: string): void => {
 
   logInfo('Shutdown complete');
   clearTimeout(forceExit);
-  process.exit(0);
 };
 
 process.on('SIGINT', () => shutdown('SIGINT'));

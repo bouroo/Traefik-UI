@@ -124,6 +124,7 @@ export function validateBody(schema: ValidationSchema): MiddlewareHandler {
       return c.json({ error: 'Validation failed', details: result.errors }, 400);
     }
 
+    c.set('parsedBody', body);
     await next();
   };
 }

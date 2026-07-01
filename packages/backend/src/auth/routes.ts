@@ -46,7 +46,7 @@ interface User {
 // Returns { token: string, user: { id, username } } on success
 // Returns 401 on invalid credentials
 auth.post('/login', validateBody(loginSchema), async (c) => {
-  const body = (await c.req.json()) as LoginBody;
+  const body = c.get('parsedBody') as LoginBody;
   const { username, password } = body;
 
   const db = getDb();
@@ -114,7 +114,7 @@ auth.get('/me', authMiddleware, async (c) => {
 // Validates current password, updates to new (argon2id hashed)
 auth.post('/change-password', authMiddleware, validateBody(changePasswordSchema), async (c) => {
   const userId = c.get('userId');
-  const body = (await c.req.json()) as ChangePasswordBody;
+  const body = c.get('parsedBody') as ChangePasswordBody;
   const { currentPassword, newPassword } = body;
 
   const db = getDb();

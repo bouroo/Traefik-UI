@@ -99,6 +99,21 @@ configCrud.post('/:resourceType', async (c) => {
     return c.json({ error: 'Missing required fields: protocol, name, data' }, 400);
   }
 
+  if (
+    !/^[a-zA-Z0-9-_]+$/.test(name) ||
+    name === '__proto__' ||
+    name === 'constructor' ||
+    name === 'prototype'
+  ) {
+    return c.json(
+      {
+        error:
+          'Invalid resource name. Only alphanumeric characters, dashes, and underscores are allowed.',
+      },
+      400
+    );
+  }
+
   if (!isValidProtocol(protocol)) {
     return c.json({ error: `Invalid protocol: ${protocol}` }, 400);
   }

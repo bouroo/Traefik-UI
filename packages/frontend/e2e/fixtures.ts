@@ -123,9 +123,9 @@ export async function mockSsoProviders(
 export async function mockDashboard(page: Page, data?: Record<string, unknown>) {
   const defaultData = {
     overview: {
-      http: { file: { routers: 5, services: 3, middlewares: 2 } },
-      tcp: {},
-      udp: {},
+      http: { routers: { total: 5 }, services: { total: 3 }, middlewares: { total: 2 } },
+      tcp: { routers: { total: 1 }, services: { total: 1 }, middlewares: { total: 1 } },
+      udp: { routers: { total: 1 }, services: { total: 1 } },
       features: { tracing: 'enabled', metrics: 'enabled', accessLog: true },
       providers: ['file'],
     },

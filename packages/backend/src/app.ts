@@ -171,13 +171,10 @@ app.get('/api/health', async (c) => {
 
   const dbOk = database.status === 'ok';
   const traefikOk = traefik.status === 'ok';
-  const traefikReachable = traefik.status !== 'unreachable';
 
   let status: 'ok' | 'degraded' | 'unhealthy';
   if (!dbOk) {
     status = 'unhealthy';
-  } else if (!traefikOk && traefikReachable) {
-    status = 'degraded';
   } else if (!traefikOk) {
     status = 'degraded';
   } else {
