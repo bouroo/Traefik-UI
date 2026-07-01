@@ -9,11 +9,11 @@ export function getMockTraefikUrl(): string {
 }
 
 export function startMockTraefik(): void {
-  // If another worker already started the mock server, reuse it
-  if (process.env.__MOCK_TRAEFIK_PORT__) {
-    port = parseInt(process.env.__MOCK_TRAEFIK_PORT__, 10);
-    return;
-  }
+  // Already started in this worker — reuse the live in-process instance.
+  // (Do NOT share via process.env: under Bun's worker-per-file runner the
+  // originating worker can terminate and take its Bun.serve down with it,
+  // leaving siblings pointing at a dead port.)
+  if (server) return;
 
   server = Bun.serve({
     port: 0, // random available port
@@ -261,7 +261,6 @@ export function startMockTraefik(): void {
   });
 
   port = server.port;
-  process.env.__MOCK_TRAEFIK_PORT__ = String(port);
   process.env.TRAEFIK_API_URL = `http://127.0.0.1:${port}`;
   console.log(`[Test] Mock Traefik running on http://127.0.0.1:${port}`);
 }
