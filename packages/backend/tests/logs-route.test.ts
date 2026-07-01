@@ -1,11 +1,10 @@
 // Set DYNAMIC_CONFIG_PATH and ACCESS_LOG_PATH to temp files BEFORE the app is imported.
 // The preload module's top-level code runs before this file's body (ESM import order).
-import { rmSync, writeFileSync, existsSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
-import { SHARED_TMP_DIR, SHARED_ACCESS_LOG_PATH, patchConfigPaths } from './test-paths-preload';
+import { SHARED_ACCESS_LOG_PATH, patchConfigPaths } from './test-paths-preload';
 
 const tempLog = SHARED_ACCESS_LOG_PATH;
-const tmpDir = SHARED_TMP_DIR;
 
 let app: typeof import('./helpers').app;
 let setupTestUser: typeof import('./helpers').setupTestUser;
@@ -57,9 +56,6 @@ describe('logs route /api/logs/access', () => {
 
   afterAll(() => {
     cleanupTestEnv();
-    if (existsSync(tmpDir)) {
-      rmSync(tmpDir, { recursive: true, force: true });
-    }
   });
 
   it('returns parsed lines, totalLines, and hasMore for a mixed CLF+JSON log', async () => {

@@ -75,7 +75,9 @@ export const config = {
   },
 
   // Logging
-  logLevel: Bun.env.LOG_LEVEL || 'info',
+  get logLevel(): string {
+    return Bun.env.LOG_LEVEL || 'info';
+  },
 
   // Node environment (read at access time so tests can mutate)
   get nodeEnv(): string {

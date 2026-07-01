@@ -1,12 +1,11 @@
 // Set DYNAMIC_CONFIG_PATH and ACCESS_LOG_PATH to temp files BEFORE the app is imported.
 // The preload module's top-level code runs before this file's body (ESM import order).
-import { rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
 import { YAML } from 'bun';
-import { SHARED_DYNAMIC_CONFIG_PATH, SHARED_TMP_DIR, patchConfigPaths } from './test-paths-preload';
+import { SHARED_DYNAMIC_CONFIG_PATH, patchConfigPaths } from './test-paths-preload';
 
 const tempYaml = SHARED_DYNAMIC_CONFIG_PATH;
-const tmpDir = SHARED_TMP_DIR;
 
 let app: typeof import('./helpers').app;
 let setupTestUser: typeof import('./helpers').setupTestUser;
@@ -51,9 +50,6 @@ describe('config-crud', () => {
 
   afterAll(() => {
     cleanupTestEnv();
-    if (existsSync(tmpDir)) {
-      rmSync(tmpDir, { recursive: true, force: true });
-    }
   });
 
   describe('POST /api/config-crud/:resourceType', () => {

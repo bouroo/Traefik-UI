@@ -3,6 +3,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
 // Set env BEFORE importing source modules so config reads the values at access time.
 import './env';
 
+const ORIGINAL_TRAEFIK_API_URL = process.env.TRAEFIK_API_URL;
+const ORIGINAL_REQUEST_TIMEOUT_MS = process.env.TRAEFIK_REQUEST_TIMEOUT_MS;
+
 process.env.TRAEFIK_REQUEST_TIMEOUT_MS = '200';
 
 import { fetchTraefik, getHttpRouters, getHttpRouter } from '../src/traefik/client';
@@ -65,6 +68,11 @@ beforeAll(() => {
 
 afterAll(() => {
   server?.stop();
+  // Restore env so we don't poison other test files sharing this process.
+  if (ORIGINAL_TRAEFIK_API_URL === undefined) delete process.env.TRAEFIK_API_URL;
+  else process.env.TRAEFIK_API_URL = ORIGINAL_TRAEFIK_API_URL;
+  if (ORIGINAL_REQUEST_TIMEOUT_MS === undefined) delete process.env.TRAEFIK_REQUEST_TIMEOUT_MS;
+  else process.env.TRAEFIK_REQUEST_TIMEOUT_MS = ORIGINAL_REQUEST_TIMEOUT_MS;
 });
 
 describe('fetchTraefik timeout', () => {
