@@ -169,7 +169,7 @@ users.put('/:id', requirePermission('system.users.write'), async (c) => {
         db.run('INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)', [id, roleId]);
       }
     })();
-    invalidateUserPermissions(id);
+    invalidateUserPermissions(Number(id));
   }
 
   logAudit(c, 'user.update', 'user', String(id));

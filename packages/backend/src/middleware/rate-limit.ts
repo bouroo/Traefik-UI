@@ -17,42 +17,15 @@ const DEFAULTS: Required<Pick<RateLimitOptions, 'windowMs' | 'max'>> = {
   max: 100,
 };
 
-const buckets = new Map<string, BucketEntry>();
-
-let cleanupTimer: ReturnType<typeof setInterval> | null = null;
-let lastWindowMs = 0;
+const activeInstances: {
+  buckets: Map<string, BucketEntry>;
+  timer: ReturnType<typeof setInterval>;
+}[] = [];
 
 function defaultKey(c: Context): string {
   return (
     c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || c.req.header('x-real-ip') || 'unknown'
   );
-}
-
-function cleanupExpired(windowMs: number): void {
-  const now = Date.now();
-  const cutoff = now - windowMs;
-  for (const [key, entry] of buckets) {
-    while (entry.timestamps.length > 0 && entry.timestamps[0] <= cutoff) {
-      entry.timestamps.shift();
-    }
-    if (entry.timestamps.length === 0) {
-      buckets.delete(key);
-    }
-  }
-}
-
-function ensureCleanup(windowMs: number): void {
-  if (cleanupTimer && lastWindowMs === windowMs) return;
-  if (cleanupTimer) {
-    clearInterval(cleanupTimer);
-  }
-  lastWindowMs = windowMs;
-  const interval = Math.max(windowMs, 30_000);
-  cleanupTimer = setInterval(() => cleanupExpired(windowMs), interval);
-  // Don't keep the process alive solely for cleanup
-  if (typeof cleanupTimer === 'object' && cleanupTimer && 'unref' in cleanupTimer) {
-    (cleanupTimer as unknown as { unref: () => void }).unref();
-  }
 }
 
 export function rateLimit(options: RateLimitOptions = {}): MiddlewareHandler {
@@ -67,7 +40,25 @@ export function rateLimit(options: RateLimitOptions = {}): MiddlewareHandler {
     };
   }
 
-  ensureCleanup(windowMs);
+  const buckets = new Map<string, BucketEntry>();
+  const interval = Math.max(windowMs, 30_000);
+  const timer = setInterval(() => {
+    const now = Date.now();
+    const cutoff = now - windowMs;
+    for (const [key, entry] of buckets) {
+      while (entry.timestamps.length > 0 && entry.timestamps[0] <= cutoff) {
+        entry.timestamps.shift();
+      }
+      if (entry.timestamps.length === 0) {
+        buckets.delete(key);
+      }
+    }
+  }, interval);
+  // Don't keep the process alive solely for cleanup
+  if (typeof timer === 'object' && timer && 'unref' in timer) {
+    (timer as unknown as { unref: () => void }).unref();
+  }
+  activeInstances.push({ buckets, timer });
 
   return async (c: Context, next: Next) => {
     const key = keyGenerator(c);
@@ -114,10 +105,9 @@ export function rateLimit(options: RateLimitOptions = {}): MiddlewareHandler {
 
 /** @internal Test-only hook to reset state between runs */
 export function _resetRateLimitState(): void {
-  buckets.clear();
-  if (cleanupTimer) {
-    clearInterval(cleanupTimer);
-    cleanupTimer = null;
+  for (const instance of activeInstances) {
+    instance.buckets.clear();
+    clearInterval(instance.timer);
   }
-  lastWindowMs = 0;
+  activeInstances.length = 0;
 }

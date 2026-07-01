@@ -64,13 +64,14 @@ async function readLastLines(
   let allLines: string[];
   let tailBytes!: Uint8Array;
   let tailNewlines!: number;
+  const decoder = new TextDecoder();
 
   let startPos = Math.max(0, fileSize - readSize);
 
   while (true) {
     tailBytes = await file.slice(startPos).bytes();
     tailNewlines = countNewlines(tailBytes);
-    const content = new TextDecoder().decode(tailBytes);
+    const content = decoder.decode(tailBytes);
     allLines = content.split('\n');
 
     if (startPos > 0) {
@@ -117,7 +118,7 @@ async function computeTotalFileLines(
   if (startPos > 0) {
     return (await countPrefix(file, startPos)) + tailNewlines;
   }
-  return tailNewlines > 0 ? tailNewlines + 1 : 0;
+  return tailNewlines + 1;
 }
 
 logs.get('/access', async (c) => {
