@@ -14,31 +14,16 @@ import { Badge } from '@/components/ui/badge';
 import { getDashboard } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { ShieldAlert } from 'lucide-react';
+import type { TraefikOverview } from '@traefik-ui/shared';
 
-const PROTOCOL_COLORS: Record<string, string> = {
+const PROTOCOL_COLORS: Record<'http' | 'tcp' | 'udp', string> = {
   http: '#3b82f6',
   tcp: '#22c55e',
   udp: '#f59e0b',
 };
 
-interface ProviderStats {
-  routers?: number;
-  services?: number;
-  middlewares?: number;
-}
-
 interface DashboardData {
-  overview: {
-    http: Record<string, ProviderStats>;
-    tcp: Record<string, ProviderStats>;
-    udp: Record<string, ProviderStats>;
-    features: {
-      tracing: string;
-      metrics: string;
-      accessLog: boolean;
-    };
-    providers: string[];
-  };
+  overview: TraefikOverview;
   version: {
     version: string;
     codename: string;
@@ -150,36 +135,19 @@ export function DashboardPage() {
     );
   }
 
-  const overview = data?.overview || { http: {}, tcp: {}, udp: {}, features: {}, providers: [] };
+  const overview = data?.overview;
   const version = data?.version || { version: '', codename: '', uptime: '' };
   const entrypoints = data?.entrypoints || [];
 
-  let httpRouters = 0,
-    httpServices = 0,
-    httpMiddlewares = 0;
-  let tcpRouters = 0,
-    tcpServices = 0,
-    tcpMiddlewares = 0;
-  let udpRouters = 0,
-    udpServices = 0;
-
-  Object.values(overview.http || {}).forEach((v) => {
-    const stats = v as ProviderStats;
-    httpRouters += stats.routers || 0;
-    httpServices += stats.services || 0;
-    httpMiddlewares += stats.middlewares || 0;
-  });
-  Object.values(overview.tcp || {}).forEach((v) => {
-    const stats = v as ProviderStats;
-    tcpRouters += stats.routers || 0;
-    tcpServices += stats.services || 0;
-    tcpMiddlewares += stats.middlewares || 0;
-  });
-  Object.values(overview.udp || {}).forEach((v) => {
-    const stats = v as ProviderStats;
-    udpRouters += stats.routers || 0;
-    udpServices += stats.services || 0;
-  });
+  const httpRouters = overview?.http.routers.total ?? 0;
+  const httpServices = overview?.http.services.total ?? 0;
+  const httpMiddlewares = overview?.http.middlewares.total ?? 0;
+  const tcpRouters = overview?.tcp.routers.total ?? 0;
+  const tcpServices = overview?.tcp.services.total ?? 0;
+  const tcpMiddlewares = overview?.tcp.middlewares.total ?? 0;
+  const udpRouters = overview?.udp.routers.total ?? 0;
+  const udpServices = overview?.udp.services.total ?? 0;
+  const providers = overview?.providers ?? [];
 
   const totalRouters = httpRouters + tcpRouters + udpRouters;
   const totalServices = httpServices + tcpServices + udpServices;
@@ -191,19 +159,29 @@ export function DashboardPage() {
     { name: 'UDP', routers: udpRouters, color: PROTOCOL_COLORS.udp },
   ].filter((d) => d.routers > 0);
 
-  const providerStatsData = (
-    ['http', 'tcp', 'udp'] as const
-  ).flatMap((protocol) => {
-    const providers = overview[protocol];
-    if (!providers) return [];
-    return Object.entries(providers).map(([provider, stats]) => ({
-      provider,
-      protocol: protocol.toUpperCase(),
-      routers: stats.routers || 0,
-      services: stats.services || 0,
-      middlewares: (stats as { middlewares?: number }).middlewares || 0,
-    }));
-  });
+  const protocolRows = [
+    {
+      protocol: 'HTTP',
+      routers: httpRouters,
+      services: httpServices,
+      middlewares: httpMiddlewares,
+    },
+    {
+      protocol: 'TCP',
+      routers: tcpRouters,
+      services: tcpServices,
+      middlewares: tcpMiddlewares,
+    },
+    {
+      protocol: 'UDP',
+      routers: udpRouters,
+      services: udpServices,
+      middlewares: 0,
+    },
+  ];
+  const protocolRowsData = protocolRows.filter(
+    (row) => row.routers + row.services + row.middlewares > 0,
+  );
 
   return (
     <div className="space-y-4">
@@ -263,11 +241,11 @@ export function DashboardPage() {
               <span className="text-sm text-muted-foreground">Uptime</span>
               <span className="text-sm">{version.uptime || 'N/A'}</span>
             </div>
-            {overview.providers && overview.providers.length > 0 && (
+            {providers.length > 0 && (
               <div className="pt-2">
                 <p className="text-xs font-medium text-muted-foreground mb-2">Providers</p>
                 <div className="flex flex-wrap gap-1">
-                  {overview.providers.map((p) => (
+                  {providers.map((p) => (
                     <Badge key={p} variant="secondary">
                       {p}
                     </Badge>
@@ -311,11 +289,11 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {providerStatsData.length > 0 && (
+      {protocolRowsData.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Resources by Provider
+              Resources by Protocol
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -323,7 +301,6 @@ export function DashboardPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-muted-foreground">
-                    <th className="text-left py-2 px-2">Provider</th>
                     <th className="text-left py-2 px-2">Protocol</th>
                     <th className="text-right py-2 px-2">Routers</th>
                     <th className="text-right py-2 px-2">Services</th>
@@ -331,12 +308,9 @@ export function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {providerStatsData.map((row) => (
-                    <tr key={`${row.provider}-${row.protocol}`} className="border-t">
-                      <td className="py-2 px-2 font-medium">{row.provider}</td>
-                      <td className="py-2 px-2">
-                        <Badge variant="outline">{row.protocol}</Badge>
-                      </td>
+                  {protocolRowsData.map((row) => (
+                    <tr key={row.protocol} className="border-t">
+                      <td className="py-2 px-2 font-medium">{row.protocol}</td>
                       <td className="py-2 px-2 text-right">{row.routers}</td>
                       <td className="py-2 px-2 text-right">{row.services}</td>
                       <td className="py-2 px-2 text-right">{row.middlewares}</td>

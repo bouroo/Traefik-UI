@@ -73,10 +73,27 @@ export interface TraefikEntryPoint {
   http3?: { advertisedPort?: number };
 }
 
+export interface TraefikOverviewCount {
+  total: number;
+  warnings: number;
+  errors: number;
+}
+
 export interface TraefikOverview {
-  http: Record<string, { routers: number; services: number; middlewares: number }>;
-  tcp: Record<string, { routers: number; services: number; middlewares: number }>;
-  udp: Record<string, { routers: number; services: number }>;
+  http: {
+    routers: TraefikOverviewCount;
+    services: TraefikOverviewCount;
+    middlewares: TraefikOverviewCount;
+  };
+  tcp: {
+    routers: TraefikOverviewCount;
+    services: TraefikOverviewCount;
+    middlewares: TraefikOverviewCount;
+  };
+  udp: {
+    routers: TraefikOverviewCount;
+    services: TraefikOverviewCount;
+  };
   features: { tracing: string; metrics: string; accessLog: boolean };
   providers: string[];
 }

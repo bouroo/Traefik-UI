@@ -25,20 +25,79 @@ A full-featured web UI for managing your Traefik reverse proxy. Monitor routers,
 - 🐳 **Podman/Docker Compose deployment**
 - 🔒 **IdP client secrets encrypted at rest** (AES-GCM)
 
+## Screenshots
+
+A quick visual tour of the Traefik-UI interface (running against a live Traefik v3 instance with sample data).
+
+### Dashboard
+
+![Traefik-UI dashboard showing router counts, Traefik info, and protocol breakdowns](docs/screenshots/dashboard.png)
+
+### Dark Mode
+
+Traefik-UI ships with a full dark theme — toggle it from the header sun/moon switch. The theme is applied at the document root and persisted to `localStorage`, so it survives reloads (and applies on the login screen before React mounts).
+
+| Screen                                                     | Description                     |
+| ---------------------------------------------------------- | ------------------------------- |
+| ![Dashboard dark](docs/screenshots/dashboard-dark.png)     | Dashboard in dark mode          |
+| ![Routers dark](docs/screenshots/routers-dark.png)         | HTTP routers table in dark mode |
+| ![Admin users dark](docs/screenshots/admin-users-dark.png) | Admin users table in dark mode  |
+
+### Authentication
+
+| Screen                                      | Description                 |
+| ------------------------------------------- | --------------------------- |
+| ![Login screen](docs/screenshots/login.png) | Credential-based login card |
+
+### Routing
+
+| Screen                                               | Description                                   |
+| ---------------------------------------------------- | --------------------------------------------- |
+| ![HTTP routers](docs/screenshots/routers-http.png)   | HTTP routers table with HTTP / TCP / UDP tabs |
+| ![TCP routers](docs/screenshots/routers-tcp.png)     | TCP routers table                             |
+| ![UDP routers](docs/screenshots/routers-udp.png)     | UDP routers table                             |
+| ![HTTP services](docs/screenshots/services-http.png) | HTTP services table                           |
+| ![TCP services](docs/screenshots/services-tcp.png)   | TCP services table                            |
+| ![Middlewares](docs/screenshots/middlewares.png)     | Middlewares table (HTTP and TCP)              |
+
+### Infrastructure
+
+| Screen                                            | Description                                                          |
+| ------------------------------------------------- | -------------------------------------------------------------------- |
+| ![TLS certificates](docs/screenshots/tls.png)     | TLS certificates and options view (ACME)                             |
+| ![Entrypoints](docs/screenshots/entrypoints.png)  | Entrypoints list (web, websecure, tcp, tcpsecure, udp, dns, traefik) |
+| ![Access logs](docs/screenshots/logs.png)         | Access log viewer with filtering (CLF and JSON)                      |
+| ![System monitoring](docs/screenshots/system.png) | System monitoring (CPU, memory, uptime, disk)                        |
+
+### Configuration
+
+| Screen                                                 | Description                                       |
+| ------------------------------------------------------ | ------------------------------------------------- |
+| ![Config file viewer](docs/screenshots/configfile.png) | Static and dynamic Traefik config viewer / editor |
+
+### Administration
+
+| Screen                                             | Description                                        |
+| -------------------------------------------------- | -------------------------------------------------- |
+| ![Admin users](docs/screenshots/admin-users.png)   | Admin: users table                                 |
+| ![Admin roles](docs/screenshots/admin-roles.png)   | Admin: roles table (super_admin, operator, viewer) |
+| ![Admin groups](docs/screenshots/admin-groups.png) | Admin: groups table                                |
+| ![Admin IdP](docs/screenshots/admin-idp.png)       | Admin: SSO / IdP providers                         |
+
 ## Tech Stack
 
-| Component | Technology |
-|---|---|
-| Monorepo | Turborepo 2.5 + Bun Workspaces |
-| Backend | Hono.js 4 + Bun |
-| Database | SQLite via `bun:sqlite` |
-| Auth | JWT (24h) + argon2id + OIDC SSO (PKCE) |
-| RBAC | Permission-based (19 permissions, 3 built-in roles) |
-| Frontend | React 18 + Vite 6 + Tailwind CSS 3 + shadcn/ui |
-| State | Zustand 5 + TanStack Query 5 |
-| Charts | Recharts |
-| Shared | TypeScript type definitions |
-| Container | Podman/Docker |
+| Component | Technology                                          |
+| --------- | --------------------------------------------------- |
+| Monorepo  | Turborepo 2.5 + Bun Workspaces                      |
+| Backend   | Hono.js 4 + Bun                                     |
+| Database  | SQLite via `bun:sqlite`                             |
+| Auth      | JWT (24h) + argon2id + OIDC SSO (PKCE)              |
+| RBAC      | Permission-based (19 permissions, 3 built-in roles) |
+| Frontend  | React 18 + Vite 6 + Tailwind CSS 3 + shadcn/ui      |
+| State     | Zustand 5 + TanStack Query 5                        |
+| Charts    | Recharts                                            |
+| Shared    | TypeScript type definitions                         |
+| Container | Podman/Docker                                       |
 
 ## Architecture
 
@@ -77,99 +136,99 @@ podman compose logs traefik-ui | grep "Password:"
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `3000` | Server port |
-| `HOST` | `0.0.0.0` | Server host |
-| `TRAEFIK_API_URL` | `http://traefik:8080` | Traefik API endpoint |
-| `DB_PATH` | `./data/traefik-ui.db` | SQLite database path |
-| `JWT_SECRET` | `change-me-in-production-please` | JWT signing secret (change in prod!) |
-| `ENCRYPTION_KEY` | falls back to JWT_SECRET | AES-GCM key for IdP client secrets |
-| `TRAEFIK_API_USERNAME` | (empty) | Optional Traefik API username |
-| `TRAEFIK_API_PASSWORD` | (empty) | Optional Traefik API password |
-| `ACCESS_LOG_PATH` | (empty) | Path to Traefik access log file |
-| `ACME_JSON_PATH` | (empty) | Path to ACME certificates JSON file |
-| `DYNAMIC_CONFIG_PATH` | (empty) | Path to Traefik dynamic config YAML |
-| `STATIC_CONFIG_PATH` | (empty) | Path to Traefik static config YAML |
-| `LOG_LEVEL` | `info` | Log level (debug/info/warn/error/silent) |
-| `CORS_ORIGIN` | `*` | CORS allowed origin |
-| `HSTS_ENABLED` | `false` | Enable Strict-Transport-Security header (only when behind TLS) |
+| Variable               | Default                          | Description                                                    |
+| ---------------------- | -------------------------------- | -------------------------------------------------------------- |
+| `PORT`                 | `3000`                           | Server port                                                    |
+| `HOST`                 | `0.0.0.0`                        | Server host                                                    |
+| `TRAEFIK_API_URL`      | `http://traefik:8080`            | Traefik API endpoint                                           |
+| `DB_PATH`              | `./data/traefik-ui.db`           | SQLite database path                                           |
+| `JWT_SECRET`           | `change-me-in-production-please` | JWT signing secret (change in prod!)                           |
+| `ENCRYPTION_KEY`       | falls back to JWT_SECRET         | AES-GCM key for IdP client secrets                             |
+| `TRAEFIK_API_USERNAME` | (empty)                          | Optional Traefik API username                                  |
+| `TRAEFIK_API_PASSWORD` | (empty)                          | Optional Traefik API password                                  |
+| `ACCESS_LOG_PATH`      | (empty)                          | Path to Traefik access log file                                |
+| `ACME_JSON_PATH`       | (empty)                          | Path to ACME certificates JSON file                            |
+| `DYNAMIC_CONFIG_PATH`  | (empty)                          | Path to Traefik dynamic config YAML                            |
+| `STATIC_CONFIG_PATH`   | (empty)                          | Path to Traefik static config YAML                             |
+| `LOG_LEVEL`            | `info`                           | Log level (debug/info/warn/error/silent)                       |
+| `CORS_ORIGIN`          | `*`                              | CORS allowed origin                                            |
+| `HSTS_ENABLED`         | `false`                          | Enable Strict-Transport-Security header (only when behind TLS) |
 
 ## API Endpoints
 
 ### Authentication (`/api/auth`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| POST | `/api/auth/login` | Login with username/password | No |
-| POST | `/api/auth/logout` | Logout (client discards token) | No |
-| GET | `/api/auth/me` | Get current user info + permissions | Yes |
-| POST | `/api/auth/change-password` | Change user password | Yes |
-| POST | `/api/auth/refresh` | Refresh JWT token | Yes |
+| Method | Endpoint                    | Description                         | Auth |
+| ------ | --------------------------- | ----------------------------------- | ---- |
+| POST   | `/api/auth/login`           | Login with username/password        | No   |
+| POST   | `/api/auth/logout`          | Logout (client discards token)      | No   |
+| GET    | `/api/auth/me`              | Get current user info + permissions | Yes  |
+| POST   | `/api/auth/change-password` | Change user password                | Yes  |
+| POST   | `/api/auth/refresh`         | Refresh JWT token                   | Yes  |
 
 ### SSO (`/api/auth/sso`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/auth/sso/providers` | List enabled SSO providers | No |
-| GET | `/api/auth/sso/:id/initiate` | Initiate OIDC SSO flow | No |
-| GET | `/api/auth/sso/callback` | OIDC callback (code exchange) | No |
+| Method | Endpoint                     | Description                   | Auth |
+| ------ | ---------------------------- | ----------------------------- | ---- |
+| GET    | `/api/auth/sso/providers`    | List enabled SSO providers    | No   |
+| GET    | `/api/auth/sso/:id/initiate` | Initiate OIDC SSO flow        | No   |
+| GET    | `/api/auth/sso/callback`     | OIDC callback (code exchange) | No   |
 
 ### Admin — Users (`/api/admin/users`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/admin/users` | List all users with roles | Yes + RBAC |
-| GET | `/api/admin/users/:id` | Get user detail | Yes + RBAC |
-| PUT | `/api/admin/users/:id` | Update user (active, email, roles) | Yes + RBAC |
-| DELETE | `/api/admin/users/:id` | Delete user | Yes + RBAC |
+| Method | Endpoint               | Description                        | Auth       |
+| ------ | ---------------------- | ---------------------------------- | ---------- |
+| GET    | `/api/admin/users`     | List all users with roles          | Yes + RBAC |
+| GET    | `/api/admin/users/:id` | Get user detail                    | Yes + RBAC |
+| PUT    | `/api/admin/users/:id` | Update user (active, email, roles) | Yes + RBAC |
+| DELETE | `/api/admin/users/:id` | Delete user                        | Yes + RBAC |
 
 ### Admin — Groups (`/api/admin/groups`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/admin/groups` | List all groups with member counts | Yes + RBAC |
-| GET | `/api/admin/groups/:id` | Get group detail (users, roles) | Yes + RBAC |
-| POST | `/api/admin/groups` | Create group | Yes + RBAC |
-| PUT | `/api/admin/groups/:id` | Update group | Yes + RBAC |
-| DELETE | `/api/admin/groups/:id` | Delete group | Yes + RBAC |
+| Method | Endpoint                | Description                        | Auth       |
+| ------ | ----------------------- | ---------------------------------- | ---------- |
+| GET    | `/api/admin/groups`     | List all groups with member counts | Yes + RBAC |
+| GET    | `/api/admin/groups/:id` | Get group detail (users, roles)    | Yes + RBAC |
+| POST   | `/api/admin/groups`     | Create group                       | Yes + RBAC |
+| PUT    | `/api/admin/groups/:id` | Update group                       | Yes + RBAC |
+| DELETE | `/api/admin/groups/:id` | Delete group                       | Yes + RBAC |
 
 ### Admin — Roles (`/api/admin/roles`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/admin/roles` | List all roles with permissions | Yes + RBAC |
-| GET | `/api/admin/roles/:id` | Get role detail | Yes + RBAC |
-| POST | `/api/admin/roles` | Create role | Yes + RBAC |
-| PUT | `/api/admin/roles/:id` | Update role | Yes + RBAC |
+| Method | Endpoint               | Description                            | Auth       |
+| ------ | ---------------------- | -------------------------------------- | ---------- |
+| GET    | `/api/admin/roles`     | List all roles with permissions        | Yes + RBAC |
+| GET    | `/api/admin/roles/:id` | Get role detail                        | Yes + RBAC |
+| POST   | `/api/admin/roles`     | Create role                            | Yes + RBAC |
+| PUT    | `/api/admin/roles/:id` | Update role                            | Yes + RBAC |
 | DELETE | `/api/admin/roles/:id` | Delete role (built-in roles protected) | Yes + RBAC |
 
 ### Admin — Permissions (`/api/admin/permissions`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/admin/permissions` | List all permissions | Yes + RBAC |
-| GET | `/api/admin/permissions/:id` | Get permission detail | Yes + RBAC |
+| Method | Endpoint                     | Description           | Auth       |
+| ------ | ---------------------------- | --------------------- | ---------- |
+| GET    | `/api/admin/permissions`     | List all permissions  | Yes + RBAC |
+| GET    | `/api/admin/permissions/:id` | Get permission detail | Yes + RBAC |
 
 ### Admin — SSO Providers (`/api/admin/sso-providers`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/admin/sso-providers` | List all IdP configurations | Yes + RBAC |
-| GET | `/api/admin/sso-providers/:id` | Get IdP detail | Yes + RBAC |
-| POST | `/api/admin/sso-providers` | Create IdP | Yes + RBAC |
-| PUT | `/api/admin/sso-providers/:id` | Update IdP | Yes + RBAC |
-| DELETE | `/api/admin/sso-providers/:id` | Delete IdP | Yes + RBAC |
+| Method | Endpoint                       | Description                 | Auth       |
+| ------ | ------------------------------ | --------------------------- | ---------- |
+| GET    | `/api/admin/sso-providers`     | List all IdP configurations | Yes + RBAC |
+| GET    | `/api/admin/sso-providers/:id` | Get IdP detail              | Yes + RBAC |
+| POST   | `/api/admin/sso-providers`     | Create IdP                  | Yes + RBAC |
+| PUT    | `/api/admin/sso-providers/:id` | Update IdP                  | Yes + RBAC |
+| DELETE | `/api/admin/sso-providers/:id` | Delete IdP                  | Yes + RBAC |
 
 ### Resources (`/api`) — Registry-driven, auto-generated
 
 The generic resource router handles routers, services, and middlewares for all protocols. Endpoints:
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/:resourceType` | List resource across all protocols | Yes |
-| GET | `/api/:resourceType/:protocol` | List resources for a protocol | Yes |
-| GET | `/api/:resourceType/:protocol/:name` | Get resource detail (with associated resources) | Yes |
+| Method | Endpoint                             | Description                                     | Auth |
+| ------ | ------------------------------------ | ----------------------------------------------- | ---- |
+| GET    | `/api/:resourceType`                 | List resource across all protocols              | Yes  |
+| GET    | `/api/:resourceType/:protocol`       | List resources for a protocol                   | Yes  |
+| GET    | `/api/:resourceType/:protocol/:name` | Get resource detail (with associated resources) | Yes  |
 
 Where `resourceType` = `routers` | `services` | `middlewares`, `protocol` = `http` | `tcp` | `udp`.
 
@@ -177,75 +236,75 @@ Adding a new protocol to the registry automatically creates the corresponding ro
 
 ### Dashboard (`/api/dashboard`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/dashboard/` | Dashboard stats & overview | Yes |
-| GET | `/api/dashboard/health` | Dashboard health check | Yes |
+| Method | Endpoint                | Description                | Auth |
+| ------ | ----------------------- | -------------------------- | ---- |
+| GET    | `/api/dashboard/`       | Dashboard stats & overview | Yes  |
+| GET    | `/api/dashboard/health` | Dashboard health check     | Yes  |
 
 ### Overview (`/api/overview`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/overview/` | Traefik overview | Yes |
-| GET | `/api/overview/raw` | Raw overview data | Yes |
-| GET | `/api/overview/version` | Traefik version info | Yes |
+| Method | Endpoint                | Description          | Auth |
+| ------ | ----------------------- | -------------------- | ---- |
+| GET    | `/api/overview/`        | Traefik overview     | Yes  |
+| GET    | `/api/overview/raw`     | Raw overview data    | Yes  |
+| GET    | `/api/overview/version` | Traefik version info | Yes  |
 
 ### TLS (`/api/tls`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/tls/certificates` | List TLS certificates | Yes |
-| GET | `/api/tls/options` | TLS options | Yes |
+| Method | Endpoint                | Description           | Auth |
+| ------ | ----------------------- | --------------------- | ---- |
+| GET    | `/api/tls/certificates` | List TLS certificates | Yes  |
+| GET    | `/api/tls/options`      | TLS options           | Yes  |
 
 ### Logs (`/api/logs`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/logs/access` | Access logs (with filtering) | Yes |
-| GET | `/api/logs/error` | Error logs | Yes |
+| Method | Endpoint           | Description                  | Auth |
+| ------ | ------------------ | ---------------------------- | ---- |
+| GET    | `/api/logs/access` | Access logs (with filtering) | Yes  |
+| GET    | `/api/logs/error`  | Error logs                   | Yes  |
 
 ### Entrypoints (`/api/entrypoints`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/entrypoints/` | List all entrypoints | Yes |
-| GET | `/api/entrypoints/:name` | Get entrypoint detail | Yes |
+| Method | Endpoint                 | Description           | Auth |
+| ------ | ------------------------ | --------------------- | ---- |
+| GET    | `/api/entrypoints/`      | List all entrypoints  | Yes  |
+| GET    | `/api/entrypoints/:name` | Get entrypoint detail | Yes  |
 
 ### System (`/api/system`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/system/stats` | System stats (CPU, memory) | Yes |
-| GET | `/api/system/config` | UI configuration | Yes |
-| GET | `/api/system/health` | System health | No |
-| GET | `/api/system/acme` | ACME certificate summary | Yes |
+| Method | Endpoint             | Description                | Auth |
+| ------ | -------------------- | -------------------------- | ---- |
+| GET    | `/api/system/stats`  | System stats (CPU, memory) | Yes  |
+| GET    | `/api/system/config` | UI configuration           | Yes  |
+| GET    | `/api/system/health` | System health              | No   |
+| GET    | `/api/system/acme`   | ACME certificate summary   | Yes  |
 
 ### Config File (`/api/configfile`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/configfile/static` | Static config (YAML→JSON, or `?raw=true`) | Yes |
-| PUT | `/api/configfile/static` | Update static config (YAML body) | Yes |
-| GET | `/api/configfile/dynamic` | Dynamic config (YAML→JSON, or `?raw=true`) | Yes |
-| PUT | `/api/configfile/dynamic` | Update dynamic config (YAML body) | Yes |
-| POST | `/api/configfile/validate` | Validate YAML against Traefik JSON Schema | Yes |
-| POST | `/api/configfile/format` | Parse and re-format YAML | Yes |
+| Method | Endpoint                   | Description                                | Auth |
+| ------ | -------------------------- | ------------------------------------------ | ---- |
+| GET    | `/api/configfile/static`   | Static config (YAML→JSON, or `?raw=true`)  | Yes  |
+| PUT    | `/api/configfile/static`   | Update static config (YAML body)           | Yes  |
+| GET    | `/api/configfile/dynamic`  | Dynamic config (YAML→JSON, or `?raw=true`) | Yes  |
+| PUT    | `/api/configfile/dynamic`  | Update dynamic config (YAML body)          | Yes  |
+| POST   | `/api/configfile/validate` | Validate YAML against Traefik JSON Schema  | Yes  |
+| POST   | `/api/configfile/format`   | Parse and re-format YAML                   | Yes  |
 
 ### Config CRUD (`/api/config-crud`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/config-crud/:resourceType` | Read dynamic config resources (`?protocol=http`) | Yes |
-| POST | `/api/config-crud/:resourceType` | Create/update a resource in dynamic config | Yes |
-| DELETE | `/api/config-crud/:resourceType/:protocol/:name` | Delete a resource from dynamic config | Yes |
+| Method | Endpoint                                         | Description                                      | Auth |
+| ------ | ------------------------------------------------ | ------------------------------------------------ | ---- |
+| GET    | `/api/config-crud/:resourceType`                 | Read dynamic config resources (`?protocol=http`) | Yes  |
+| POST   | `/api/config-crud/:resourceType`                 | Create/update a resource in dynamic config       | Yes  |
+| DELETE | `/api/config-crud/:resourceType/:protocol/:name` | Delete a resource from dynamic config            | Yes  |
 
 Where `resourceType` = `routers` | `services` | `middlewares`.
 
 ### Health
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/health` | Public health check | No |
+| Method | Endpoint      | Description         | Auth |
+| ------ | ------------- | ------------------- | ---- |
+| GET    | `/api/health` | Public health check | No   |
 
 ## Development
 

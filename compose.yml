@@ -11,6 +11,10 @@ services:
       # Entrypoints
       - '--entrypoints.web.address=:80'
       - '--entrypoints.websecure.address=:443'
+      - '--entrypoints.tcp.address=:8081'
+      - '--entrypoints.tcpsecure.address=:8443'
+      - '--entrypoints.udp.address=:8082/udp'
+      - '--entrypoints.dns.address=:8053/udp'
       # Docker provider (uncomment if using Docker/Podman socket)
       # - "--providers.docker=true"
       # - "--providers.docker.exposedbydefault=false"

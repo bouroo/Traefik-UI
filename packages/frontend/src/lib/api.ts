@@ -87,17 +87,7 @@ export async function getMe(): Promise<{ user: User; permissions: string[] }> {
 }
 
 interface DashboardData {
-  overview: {
-    http: Record<string, { routers: number; services: number; middlewares?: number }>;
-    tcp: Record<string, { routers: number; services: number; middlewares?: number }>;
-    udp: Record<string, { routers: number; services: number; middlewares?: number }>;
-    features: {
-      tracing: string;
-      metrics: string;
-      accessLog: boolean;
-    };
-    providers: string[];
-  };
+  overview: TraefikOverview;
   version: {
     version: string;
     codename: string;
